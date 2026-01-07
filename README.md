@@ -20,15 +20,11 @@ Il cuore della simulazione è la classe C++ `ASolarSail`, che esegue questo cicl
 2.  **Calcolo della Spinta (Solar Pressure):**
     La forza viene calcolata usando il modello vettoriale di McInnes per vele ideali:
     
-    $$ 
-    \vec{F} = 2 P A (\hat{L} \cdot \hat{N})^2 \hat{N}
-    $$
+    $\vec{F} = 2 P A (\hat{L} \cdot \hat{N})^2 \hat{N}$ 
     
     Dove la pressione di radiazione solare scala con l'inverso del quadrato della distanza:
     
-    $$
-    P = \frac{P_0}{r^2}
-    $$
+    $P = \frac{P_0}{r^2}$ 
     
     * $P_0 = 4.56 \times 10^{-6}$ Pa = pressione di radiazione solare a 1 AU
     * $r$ = distanza attuale del Sole (in AU)
