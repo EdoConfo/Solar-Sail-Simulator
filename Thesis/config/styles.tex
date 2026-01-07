@@ -1,0 +1,28 @@
+% --- GEOMETRIA ---
+\geometry{top=3.5cm, bottom=2.5cm, left=3cm, right=2.5cm}
+
+% --- HEADER E FOOTER ---
+\pagestyle{fancy}
+\fancyhf{}
+\addtolength{\headheight}{14pt}
+\fancyhead[R]{\textbf{\thepage}}
+\fancyhead[L]{\textbf{\leftmark}}
+
+% --- GRAFICI ---
+\pgfplotsset{compat=1.18}
+
+% --- CONFIGURAZIONE CODICE (C++ e Python) ---
+\lstset{
+    language=C++,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    tabsize=4,
+    breaklines=true,
+    basicstyle=\ttfamily,
+    commentstyle=\color{green!60!black},
+    keywordstyle=\color{blue},
+    stringstyle=\color{red},
+    frame=single,
+    frameround=1mm
+}

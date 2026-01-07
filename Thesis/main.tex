@@ -1,0 +1,56 @@
+\documentclass[a4paper,12pt]{report} 
+
+% --- 1. CONFIGURAZIONE ---
+\input{config/packages}
+\input{config/styles}
+
+\begin{document}
+
+% --- 2. FRONTMATTER ---
+\input{frontmatter/titlepage}
+
+% Pagina bianca di rispetto
+\thispagestyle{empty} \pagenumbering{gobble} \null \clearpage 
+\pagenumbering{gobble} \cleardoublepage \thispagestyle{empty}
+
+\input{frontmatter/dedication}
+
+%Sommario e Ringraziamenti (opzionali per ora)
+\input{frontmatter/abstract}
+\input{frontmatter/acknowledgments}
+
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+% --- 3. CAPITOLI ---
+\chapter*{Introduzione}
+\addcontentsline{toc}{chapter}{Introduzione}
+\input{chapters/01_intro}
+
+\chapter{Stato dell'arte}
+\input{chapters/02_stato_arte}
+
+\chapter{Architettura del Simulatore}
+\input{chapters/03_architettura}
+
+\chapter{Implementazione del Ray Tracing}
+\input{chapters/04_implementazione}
+
+\chapter{Risultati e Validazione}
+\input{chapters/05_risultati}
+
+\chapter{Conclusioni e Sviluppi Futuri}
+\input{chapters/06_conclusioni}
+
+% --- 4. APPENDICI ---
+\appendix
+\input{appendices/A_source_code}
+\input{appendices/B_manuale_uso}
+
+% --- 5. BIBLIOGRAFIA ---
+\addcontentsline{toc}{chapter}{Bibliografia}
+\bibliographystyle{unsrt} 
+\bibliography{thesis}
+
+\end{document}
