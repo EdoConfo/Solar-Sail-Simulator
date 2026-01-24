@@ -15,8 +15,11 @@ Lista dei TODO organizzata per directory di progetto.
 - [x] Calcolare quanto è inclinata la vela rispetto alla luce.
 - [x] Applicare la spinta nella direzione giusta (lungo la normale).
 - [x] Disegnare linee colorate per vedere raggio e forza.
+- [x] Migliorare la simulazione fisica (Griglia Multi-Ray e Simulation Manager).
 - [ ] Salvare posizione e velocità su un file CSV per i grafici.
 - [ ] Attaccare la vela ad un satellite (Ho dei dubbi, vedremo dopo)
+- [x] La spinta avviene solo da una faccia della vela... Risolvi
+- [ ] Aggiungere fattore di riflessione al Simulation Manager per gestire casi non ideali (attualmente è 2 fisso).
 
 ---
 
@@ -31,7 +34,7 @@ Lista dei TODO organizzata per directory di progetto.
 
 # 3. Thesis
 
-- [ ] Setup del progetto LaTeX funzionante.
+- [x] Setup del progetto LaTeX funzionante.
 - [ ] Scrittura (duh).
 - [ ] Revisione.
 - [ ] Revisione.
