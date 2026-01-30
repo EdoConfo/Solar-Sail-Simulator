@@ -7,7 +7,9 @@ Log di sviluppo del simulatore di vela solare.
 ### Indice
 [Update 1: Setup, Bibliografia e Prototipo Iniziale](#update-1-setup-bibliografia-e-prototipo-iniziale)
 
-[Update 2: Architettura Manager, Geometria Discreta e Telemetria](#update-2-architettura-manager-geometria-discreta-e-telemetria)
+[Update 2: Architettura Avanzata, Simulation Manager e Multi-Ray Casting](#update-2-architettura-avanzata-simulation-manager-e-multi-ray-casting)
+
+[Update 3: Esportazione Dati, Analisi e Confronto](#update-3-esportazione-dati-analisi-e-confronto)
 
 ---
 
@@ -50,7 +52,7 @@ Log di sviluppo del simulatore di vela solare.
 
 ---
 
-# Update 2: Architettura Manager, Geometria Discreta e Telemetria
+# Update 2: Architettura Avanzata, Simulation Manager e Multi-Ray Casting
 
 ## Sezioni
 
@@ -70,5 +72,28 @@ Log di sviluppo del simulatore di vela solare.
 > **Stato:** Funzionante
 >
 > Il simulatore è ora configurato con Multi-Ray Casting, dove la vela è composta da una griglia NxN di celle invece di un singolo punto materiale. Ogni cella della griglia NxN calcola indipendentemente ombre e forza, permettendo la gestione corretta di occlusioni parziali e la conseguente generazione di una rotazione. L'intero sistema è ora centralizzato tramite un Simulation Manager che permette il controllo dei parametri a runtime, mentre un nuovo Overlay mostra in tempo reale lo stato dei singoli raggi (Active o Blocked) e i dati fisici.
+
+---
+
+# Update 3: Esportazione Dati, Analisi e Confronto
+
+## Sezioni
+
+### Simulation
+- Implementata l'esportazione automatica dei dati su un file .csv alla fine di ogni simulazione.
+- Il file .csv viene aggiornato durante la simulazione ad ogni tick con tutti i dati rilevanti (velocità, forza, angolo di incidenza, ...).
+
+### Analysis
+- Creato uno script Python [`SolarSailPlot.py`](Analysis/SolarSailPlot.py) che copia automaticamente il file .csv generato dalla simulazione.
+- Lo script genera grafici a partire dai dati contenuti nel file .csv.
+- Lo script permette di confrontare più file .csv insieme usando curve con colori diversi.
+
+---
+
+## Risultato Attuale ed Eventuali Errori Irrisolti
+
+> **Stato:** Funzionante
+>
+> La simulazione ora esporta automaticamente i dati fisici rilevanti in formato .csv, che vengono poi analizzati e confrontati tramite grafici generati dallo script Python dedicato. Questo consente di valutare rapidamente le prestazioni della vela solare e di documentare i risultati in modo chiaro.
 
 ---

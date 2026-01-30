@@ -16,7 +16,7 @@ Lista dei TODO organizzata per directory di progetto.
 - [x] Applicare la spinta nella direzione giusta (lungo la normale).
 - [x] Disegnare linee colorate per vedere raggio e forza.
 - [x] Migliorare la simulazione fisica (Griglia Multi-Ray e Simulation Manager).
-- [ ] Salvare posizione e velocità su un file CSV per i grafici.
+- [x] Salvare posizione e velocità su un file CSV per i grafici.
 - [ ] Attaccare la vela ad un satellite (Ho dei dubbi, vedremo dopo)
 - [x] La spinta avviene solo da una faccia della vela... Risolvi
 - [ ] Aggiungere fattore di riflessione al Simulation Manager per gestire casi non ideali (attualmente è 2 fisso).
@@ -25,10 +25,11 @@ Lista dei TODO organizzata per directory di progetto.
 
 # 2. Analysis
 
-- [ ] Generazione grafici a partire dai dati della simulazione di Unreal.
-- [ ] Generazione grafici a partire dalle formule ideali.
-- [ ] Confronto tra grafici reali e teorici.
-- [ ] Calcolo dell'errore effettivo.
+- [x] Generazione grafici a partire dai dati della simulazione di Unreal (script python)
+- [x] Possibilità di confrontare più CSV sullo stesso grafico (colori diversi)
+- [ ] Generazione grafici a partire dalle formule ideali
+- [ ] Confronto tra grafici reali, teorici e simulati
+- [ ] Calcolo dell'errore effettivo
 
 ---
 

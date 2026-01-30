@@ -6,6 +6,10 @@
 #include "DrawDebugHelpers.h"
 #include "Engine/DirectionalLight.h"
 
+#include "Misc/FileHelper.h"
+#include "HAL/PlatformFilemanager.h"
+#include "Misc/Paths.h"
+
 ASolarSail::ASolarSail() {
     PrimaryActorTick.bCanEverTick = true;
     SailMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SailMesh"));
@@ -51,6 +55,13 @@ void ASolarSail::BeginPlay() {
 
     FindSunInScene();
 
+    FString ProjectDir = FPaths::ProjectDir();
+    FString AnalysisDir = ProjectDir + TEXT("../Analysis/");
+    IFileManager::Get().MakeDirectory(*AnalysisDir, true);
+    CsvFilePath = AnalysisDir + TEXT("SolarSailData.csv");
+    bCsvHeaderWritten = false;
+    AppendDataToCSV(0.0f); // Scrivi header
+
     if (GEngine) {
         GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("Inizializzazione Vela Solare: Completata!"));
     }
@@ -71,6 +82,26 @@ void ASolarSail::Tick(float DeltaTime) {
     }
 
     UpdateSolarForce(DeltaTime);
+    AppendDataToCSV(DeltaTime);
+}
+
+void ASolarSail::AppendDataToCSV(float DeltaTime) {
+    if (!bCsvHeaderWritten) {
+        FString Header = TEXT("Time,PosX,PosY,PosZ,VelX,VelY,VelZ,ForceX,ForceY,ForceZ,IncidenceAngle,DistanceAU\n");
+        FFileHelper::SaveStringToFile(Header, *CsvFilePath);
+        bCsvHeaderWritten = true;
+    }
+
+    float Time = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0f;
+    FVector Pos = GetActorLocation();
+    FVector Vel = SailMesh && SailMesh->IsSimulatingPhysics() ? SailMesh->GetPhysicsLinearVelocity() : FVector::ZeroVector;
+    FVector Force = CurrentSolarForce;
+    float Angle = CurrentIncidenceAngle;
+    float Dist = CurrentDistanceAU;
+
+    FString Line = FString::Printf(TEXT("%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.2f,%.5f\n"), Time, Pos.X, Pos.Y, Pos.Z, Vel.X, Vel.Y, Vel.Z, Force.X, Force.Y, Force.Z, Angle, Dist);
+
+    FFileHelper::SaveStringToFile(Line, *CsvFilePath, FFileHelper::EEncodingOptions::AutoDetect, &IFileManager::Get(), FILEWRITE_Append);
 }
 
 void ASolarSail::FindSunInScene() {

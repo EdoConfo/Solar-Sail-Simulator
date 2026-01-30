@@ -30,8 +30,13 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Simulation Settings") bool bIsDoubleSided;
 
 private:
-    float CachedSolarPressure;
-    float CachedAuScale;
+	float CachedSolarPressure;
+	float CachedAuScale;
+
+	// --- CSV Export ---
+	FString CsvFilePath;
+	bool bCsvHeaderWritten = false;
+	void AppendDataToCSV(float DeltaTime);
 
 public:
 
