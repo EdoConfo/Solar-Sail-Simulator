@@ -14,40 +14,26 @@ class SIMULATION_API ASolarSail : public AActor {
 	
 public:
 	ASolarSail();
+	virtual void Tick(float DeltaTime) override;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Solar Sail") UStaticMeshComponent* SailMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Telemetry")  FVector CurrentSolarForce;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Telemetry")  float CurrentIncidenceAngle;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Telemetry")  float CurrentDistanceAU;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Solar System") ADirectionalLight* SunLightActor;
 
 protected:
 	virtual void BeginPlay() override;
 
-public:
-	virtual void Tick(float DeltaTime) override;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Solar Sail") UStaticMeshComponent* SailMesh;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Physics Data") float SailArea;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Physics Data") float TotalMass;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Simulation Settings", meta = (ClampMin = "1", ClampMax = "100")) int32 GridResolution;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Simulation Settings") bool bShowPhotonDebug;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Simulation Settings") bool bShowSunDistanceDebug;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Simulation Settings") bool bIsDoubleSided;
-
 private:
 	float CachedSolarPressure;
 	float CachedAuScale;
-
-	// --- CSV Export ---
 	FString CsvFilePath;
+	
 	bool bCsvHeaderWritten = false;
 	void AppendDataToCSV(float DeltaTime);
-
-public:
-
-    // TODO - DA TOGLIERE DOPO AVER CAPITO COME MODIFICARE IL TEMPO DI SIMULAZIONE IN UNREAL
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Physics Data") float ForceMultiplier;
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Telemetry") FVector CurrentSolarForce;
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Telemetry") float CurrentIncidenceAngle;
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Telemetry") float CurrentDistanceAU;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Solar System") ADirectionalLight* SunLightActor;
-
-private:
     void FindSunInScene();
     void UpdateSolarForce(float DeltaTime);
+	void UpdateGravityForce();
+	void AlignSailNormal();
 };
