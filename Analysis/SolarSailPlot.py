@@ -34,4 +34,11 @@ plt.title('Forza fotonica sulla vela nel tempo')
 plt.legend()
 plt.grid(True)
 plt.tight_layout()
+
+output_dir = os.path.join(os.path.dirname(__file__), 'Plots')
+os.makedirs(output_dir, exist_ok=True)
+output_path = os.path.join(output_dir, 'SolarSailForcePlot.png')
+plt.savefig(output_path)
+print(f"Grafico salvato in {output_path}")
+
 plt.show()
