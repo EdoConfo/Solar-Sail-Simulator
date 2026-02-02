@@ -14,43 +14,33 @@ ASolarSail::ASolarSail() {
     PrimaryActorTick.bCanEverTick = true;
     SailMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SailMesh"));
     RootComponent = SailMesh;
+
     SailMesh->SetSimulatePhysics(true);
     SailMesh->SetEnableGravity(false);
     SailMesh->SetLinearDamping(0.0f);
     SailMesh->SetAngularDamping(0.0f);
-    SailArea = 1.0f; 
-    TotalMass = 1.0f; 
-    SailMesh->SetMassOverrideInKg(NAME_None, TotalMass, true);
-    GridResolution = 5; 
-    bShowPhotonDebug = false; 
-    bShowSunDistanceDebug = true;
-    bIsDoubleSided = false;
+
     CachedSolarPressure = 0.0f;
     CachedAuScale = 1.0f;
-    ForceMultiplier = 1.0f;
 }
 
 void ASolarSail::BeginPlay() {
     Super::BeginPlay();
-    
+
+    SetInitialPositions();
+
     if (ASimulationManager::Instance) {
-        TotalMass = ASimulationManager::Instance->SailMass;
-        SailArea = ASimulationManager::Instance->SailArea;
-        GridResolution = ASimulationManager::Instance->GridResolution;
-        bShowPhotonDebug = ASimulationManager::Instance->bShowPhotonDebug;
-        bShowSunDistanceDebug = ASimulationManager::Instance->bShowSunDistanceDebug;
-        bIsDoubleSided = ASimulationManager::Instance->bIsDoubleSided;
-        ForceMultiplier = ASimulationManager::Instance->ForceMultiplier;
         CachedSolarPressure = ASimulationManager::Instance->SolarPressureAt1AU;
         CachedAuScale = ASimulationManager::Instance->AuToUnrealScale;
+        if (SailMesh) {
+            SailMesh->SetMassOverrideInKg(NAME_None, ASimulationManager::Instance->SailMass, true);
+        }
     } else {
         CachedSolarPressure = 0.00000456f;
         CachedAuScale = 10000.0f;
-        SailArea = 32.0f;
-    }
-
-    if (SailMesh) {
-        SailMesh->SetMassOverrideInKg(NAME_None, TotalMass, true);
+        if (SailMesh) {
+            SailMesh->SetMassOverrideInKg(NAME_None, 1.0f, true);
+        }
     }
 
     FindSunInScene();
@@ -60,7 +50,7 @@ void ASolarSail::BeginPlay() {
     IFileManager::Get().MakeDirectory(*AnalysisDir, true);
     CsvFilePath = AnalysisDir + TEXT("SolarSailData.csv");
     bCsvHeaderWritten = false;
-    AppendDataToCSV(0.0f); // Scrivi header
+    AppendDataToCSV(0.0f);
 
     if (GEngine) {
         GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("Inizializzazione Vela Solare: Completata!"));
@@ -71,18 +61,92 @@ void ASolarSail::Tick(float DeltaTime) {
     Super::Tick(DeltaTime);    
 
     if (ASimulationManager::Instance) {
-        GridResolution = ASimulationManager::Instance->GridResolution;
-        bShowPhotonDebug = ASimulationManager::Instance->bShowPhotonDebug;
-        bShowSunDistanceDebug = ASimulationManager::Instance->bShowSunDistanceDebug;
-        bIsDoubleSided = ASimulationManager::Instance->bIsDoubleSided;
-        ForceMultiplier = ASimulationManager::Instance->ForceMultiplier;
-        SailArea = ASimulationManager::Instance->SailArea;
         CachedSolarPressure = ASimulationManager::Instance->SolarPressureAt1AU;
         CachedAuScale = ASimulationManager::Instance->AuToUnrealScale;
     }
 
+    UpdateGravityForce();
+
+    AlignSailNormal();
+
     UpdateSolarForce(DeltaTime);
     AppendDataToCSV(DeltaTime);
+}
+
+void ASolarSail::UpdateGravityForce() {
+    if (!SailMesh) {
+        return;
+    }
+
+    if (!ASimulationManager::Instance) {
+        return;
+    }
+
+    double G = ASimulationManager::Instance->GravitationalConstant;
+    double EarthMass = ASimulationManager::Instance->EarthMass;
+    double mVela = ASimulationManager::Instance->SailMass;
+
+    FVector PosVela = GetActorLocation();
+    FVector r_vec = PosVela - EarthPosition;
+    double r = r_vec.Size();
+
+    if (r < 1.0) {
+        return;
+    }
+
+    double forza = G * EarthMass * mVela / (r * r);
+    FVector forzaDir = -r_vec.GetSafeNormal();
+    FVector forzaGrav = forzaDir * forza;
+
+    FVector forzaGravUnreal = forzaGrav * 100.0;
+    SailMesh->AddForce(forzaGravUnreal);
+}
+
+void ASolarSail::AlignSailNormal() {
+    FVector PosVela = GetActorLocation();
+    FVector TerraToVela = PosVela - EarthPosition;
+    FVector Arbitrary = FVector::UpVector;
+    if (FMath::Abs(FVector::DotProduct(TerraToVela.GetSafeNormal(), Arbitrary)) > 0.99f) {
+        Arbitrary = FVector::RightVector;
+    }
+    FVector NormalVela = FVector::CrossProduct(TerraToVela, Arbitrary).GetSafeNormal();
+    FRotationMatrix RotMat = FRotationMatrix::MakeFromXZ(NormalVela, TerraToVela.GetSafeNormal());
+    FRotator NewRotation = RotMat.Rotator();
+    SetActorRotation(NewRotation);
+}
+
+void ASolarSail::SetInitialPositions() {
+    if (!ASimulationManager::Instance) return;
+
+    EarthPosition = FVector(0.0f, 0.0f, 0.0f);
+    FVector OrbitDirection = FVector::ForwardVector;
+
+    float InitialDistanceKm = ASimulationManager::Instance->InitialSailDistanceKm;
+    double G = ASimulationManager::Instance->GravitationalConstant;
+    double EarthMass = ASimulationManager::Instance->EarthMass;
+    double SunDistCm = ASimulationManager::Instance->SunDistanceCm;
+
+    float InitialDistanceCm = InitialDistanceKm * 1e5f;
+    FVector SailPos = EarthPosition + OrbitDirection * InitialDistanceCm;
+    SetActorLocation(SailPos);
+
+    double r_m = static_cast<double>(InitialDistanceKm) * 1000.0;
+    double v_orb = sqrt(G * EarthMass / r_m);
+    float v_orb_cm_s = static_cast<float>(v_orb * 100.0);
+
+    FVector TangentDir = FVector::UpVector ^ OrbitDirection;
+    TangentDir = TangentDir.GetSafeNormal();
+    if (SailMesh) {
+        SailMesh->SetPhysicsLinearVelocity(TangentDir * v_orb_cm_s);
+    }
+
+    FVector SunDirection = FVector::UpVector;
+    SunPosition = EarthPosition + SunDirection * SunDistCm;
+
+    if (SunLightActor)
+    {
+        SunLightActor->SetActorLocation(SunPosition);
+    }
 }
 
 void ASolarSail::AppendDataToCSV(float DeltaTime) {
@@ -119,10 +183,25 @@ void ASolarSail::FindSunInScene() {
     }
 }
 
-void ASolarSail::UpdateSolarForce(float DeltaTime)
-{
+void ASolarSail::UpdateSolarForce(float DeltaTime) {
     if (!SunLightActor || !SailMesh) {
         return;
+    }
+
+    int32 GridResolution = 1;
+    float SailArea = 1.0f;
+    float ForceMultiplier = 1.0f;
+    bool bIsDoubleSided = false;
+    bool bShowPhotonDebug = false;
+    bool bShowSunDistanceDebug = false;
+
+    if (ASimulationManager::Instance) {
+        GridResolution = ASimulationManager::Instance->GridResolution;
+        SailArea = ASimulationManager::Instance->SailArea;
+        ForceMultiplier = ASimulationManager::Instance->ForceMultiplier;
+        bIsDoubleSided = ASimulationManager::Instance->bIsDoubleSided;
+        bShowPhotonDebug = ASimulationManager::Instance->bShowPhotonDebug;
+        bShowSunDistanceDebug = ASimulationManager::Instance->bShowSunDistanceDebug;
     }
 
     FVector SailOrigin = GetActorLocation(); 
