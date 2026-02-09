@@ -224,6 +224,14 @@ void ASolarSail::UpdateSolarForce(float DeltaTime) {
     if (!Manager || !SAIL_MESH) {
         return;
     }
+    double SelectedReflectivityFactor = 0.0;
+    switch (Reflectivity_Factor) {
+        case EReflectivityPreset::Absorber:  SelectedReflectivityFactor = RFACTOR_ABSORBER;  break;
+        case EReflectivityPreset::Medium:    SelectedReflectivityFactor = RFACTOR_MEDIUM;    break;
+        case EReflectivityPreset::Realistic: SelectedReflectivityFactor = RFACTOR_REALISTIC; break;
+        case EReflectivityPreset::Perfect:   SelectedReflectivityFactor = RFACTOR_PERFECT;   break;
+        case EReflectivityPreset::Custom:    SelectedReflectivityFactor = RFACTOR_CUSTOM;    break;
+    }
     if (!Manager->EnableSolarPressure) {
         SolarForce = FVector3d::Zero();
         SolarForceModule = 0.0;
@@ -258,7 +266,7 @@ void ASolarSail::UpdateSolarForce(float DeltaTime) {
             if (!GetWorld()->LineTraceSingleByChannel(Hit, FVector(SunPosUU), FVector(SamplePos), ECC_Visibility, P)) {
                 ActivePhotons++;
                 SolarPressure = Manager->GetSolarPressureAt(SamplePos, SailDistanceFromSun);
-                double ForceMag = SolarPressure * AreaPerRay * (CosTheta * CosTheta) * 2.0;
+                double ForceMag = SelectedReflectivityFactor * SolarPressure * AreaPerRay * (CosTheta * CosTheta) * 2.0;
                 AccumulatedForce += SailNormal * ForceMag;
                 if (Manager->ShowPhotonDebug) {
                     DrawDebugLine(GetWorld(), FVector(SamplePos), FVector(SamplePos - SunDirection * 200.0), FColor::Green, false, 0.05f, 0, 0.5f);
