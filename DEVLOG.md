@@ -11,6 +11,8 @@ Log di sviluppo del simulatore di vela solare.
 
 [Update 3: Esportazione Dati, Analisi e Confronto](#update-3-esportazione-dati-analisi-e-confronto)
 
+[Update 4: Aggiunta Gravità e Refactoring Modulare](#update-4-aggiunta-gravità-e-refactoring-modulare)
+
 ---
 
 # Update 1: Setup, Bibliografia e Prototipo Iniziale
@@ -95,5 +97,32 @@ Log di sviluppo del simulatore di vela solare.
 > **Stato:** Funzionante
 >
 > La simulazione ora esporta automaticamente i dati fisici rilevanti in formato .csv, che vengono poi analizzati e confrontati tramite grafici generati dallo script Python dedicato. Questo consente di valutare rapidamente le prestazioni della vela solare e di documentare i risultati in modo chiaro.
+
+---
+
+# Update 4: Aggiunta Gravità e Refactoring Modulare
+
+## Sezioni
+
+### Simulation
+- Implementata la forza di gravità che agisce sulla vela, con parametri configurabili tramite il Simulation Manager.
+- Aggiunta la possibilità di scegliere tra orbite predefinite (LEO, MEO, GEO, Distanza Lunare) o un'altitudine personalizzata.
+- Refactoring del codice per migliorare la modularità e la manutenibilità, con funzioni dedicate per l'inizializzazione, il calcolo delle forze e l'aggiornamento della rotazione.
+- Migliorata la gestione dei parametri nell'editor, organizzandoli in categorie logiche (Orbita, Vela, Simulazione) e nascondendo quelli non rilevanti per l'utente.
+- Aggiunta la possibilità di disattivare completamente la forza solare o la gravità per testare solo una delle due.
+- Aggiunta modularità per supportare più vele con orbite e parametri indipendenti.
+- Risolto il problema dell'angolo di incidenza che sembrava essere sempre 0°, assicurando la corretta normalizzazione dei vettori e l'orientamento della vela.
+
+### Analysis
+- Aggiornato lo script Python per supportare l'analisi dei dati con gravità, confrontando i risultati con e senza forza solare.
+- Modificata la directory per mantenere organizzati i file .csv generati da diverse simulazioni.
+- Aggiornato lo script per gestire dati e csv multipli, permettendo confronti più completi per simulazioni multi-vela.
+
+---
+
+## Risultato Attuale ed Eventuali Errori Irrisolti
+> **Stato:** Funzionante
+>
+> La simulazione ora include la forza di gravità, con orbite configurabili e un sistema modulare che supporta più vele. L'analisi dei dati è stata aggiornata per confrontare scenari con e senza forza solare, consentendo una valutazione più completa delle prestazioni della vela solare in diverse condizioni.
 
 ---

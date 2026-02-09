@@ -21,22 +21,30 @@ Lista dei TODO organizzata per directory di progetto.
 - [ ] Attaccare la vela ad un satellite (Ho dei dubbi, vedremo dopo)
 - [x] La spinta avviene solo da una faccia della vela... Risolvi
 - [ ] Aggiungere fattore di riflessione al Simulation Manager per gestire casi non ideali (attualmente è 2 fisso).
-
-
-## TODO: Implementazione gravità e orbita stabile
-
-- [ ] Definire la posizione della Terra (es. origine, FVector::ZeroVector)
-- [ ] Aggiungere costante gravitazionale, massa della Terra e massa della vela nei parametri di simulazione
-- [ ] Creare funzione per calcolare la forza gravitazionale sulla vela, usando la formula:
-	$F = G \cdot \frac{M_{terra} \cdot m_{vela}}{r^2}$
-- [ ] Integrare la forza gravitazionale nel Tick() della vela
-- [ ] Impostare la posizione iniziale della vela sull'orbita geostazionaria (raggio corretto)
-- [ ] Calcolare e impostare la velocità orbitale iniziale tangente (3,07 km/s)
-- [ ] Forzare l'orientamento della vela: normale sempre perpendicolare al vettore Terra-vela (angolo 0°)
-- [ ] Aggiornare la rotazione della vela a ogni tick per mantenere l'angolo
-- [ ] Verificare che la pressione solare e la gravità agiscano correttamente insieme
-- [ ] Testare la stabilità dell'orbita nel tempo (output su CSV)
-- [ ] Documentare la logica e i parametri usati
+- [ ] Animazioni di Terra e Sole (rotazione, rivoluzione) per rendere tutto più realistico e calibrato sul TimeScale.
+- [ ] Risolvi il problema dell'angolo di incidenza che sembra essere sempre 0° (forse un problema di normalizzazione dei vettori o di orientamento della vela).
+- [ ] Testa simulazione con più vele (forse con massa diversa) per vedere se si comportano come previsto (stessa forza, accelerazione diversa).
+- [x] Risolvi problema con timescale, forse è il clamp max che è troppo basso (attualmente 1000x).
+- [ ] Orbita non fissa ma modificabile nell'editor.
+- [ ] Disattivare completamente gravità e/o forza solare per testare solo una delle due (attualmente è possibile solo scalare la forza, ma non disattivarla del tutto). (Se disattivo la gravità la vela continua a girarsi comunque??)
+- [x] Aggiungi possibilità di avere diverse orbite per diverse vele.
+- [ ] Sistema le category degli UPROPERTY per organizzare meglio i parametri nell'editor (es. "Orbita", "Vela", "Simulazione").
+- [ ] Implementazione gravità e orbita stabile
+	- [x] Definire la posizione della Terra (es. origine, FVector::ZeroVector)
+	- [x] Aggiungere costante gravitazionale, massa della Terra e massa della vela nei parametri di simulazione
+	- [x] Creare funzione per calcolare la forza gravitazionale sulla vela, usando la formula:
+		$F = G \cdot \frac{M_{terra} \cdot m_{vela}}{r^2}$
+	- [x] Integrare la forza gravitazionale nel Tick() della vela
+	- [x] Impostare la posizione iniziale della vela sull'orbita geostazionaria (raggio corretto)
+	- [ ] Calcolare e impostare la velocità orbitale iniziale tangente (3,07 km/s) (DA TESTARE NUOVAMENTE, FORSE C'ERA UN PROBLEMA CON IL TIME SCALE)
+	- [ ] Forzare l'orientamento della vela: normale sempre perpendicolare al vettore Terra-vela (angolo 0°)
+	- [x] Aggiornare la rotazione della vela a ogni tick per mantenere l'angolo
+	- [ ] Verificare che la pressione solare e la gravità agiscano correttamente insieme
+	- [ ] Testare la stabilità dell'orbita nel tempo (output su CSV)
+	- [ ] Documentare la logica e i parametri usati
+- [ ] Rendi ordinato il detail del Simulation Manager e della vela, nascondendo i parametri che non servono all'utente e raggruppando quelli che servono in categorie logiche (es. "Orbita", "Vela", "Simulazione").
+- [ ] Sistema i raggi della pressione solare che a volte sembrano non colpire la vela (forse un problema di collisioni o di orientamento dei raggi).
+- [ ] Ridisegna live telemetry.
 
 ---
 
