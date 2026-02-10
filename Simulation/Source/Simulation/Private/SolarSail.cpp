@@ -33,8 +33,19 @@ void ASolarSail::BeginPlay() {
     }
     InitializePhysicsProperties();
     SetInitialPositions();
+    if (Manager->EnableGravity) {
+        SetInitialVelocity();
+    } else {
+        UE_LOG(LogTemp, Warning, TEXT("[%s] Gravità DISATTIVATA -> Salto configurazione velocità orbitale (Resto fermo)."), *SailName);
+    }
     SetInitialRotations();
-    InitializeCSVReporting();
+    if (Manager->EnableCSVLogging) {
+        InitializeCSVReporting();
+    } else {
+        UE_LOG(LogTemp, Log, TEXT("[%s] Logging CSV disabilitato dal Manager."), *SailName);
+        CsvFilePath = TEXT("");
+        return;
+    }
     UE_LOG(LogTemp, Log, TEXT("[%s] Inizializzazione completata con successo!"), *SailName);
 }
 
@@ -89,15 +100,6 @@ void ASolarSail::SetInitialPositions() {
     SailPosition = NewLocationUU; // Aggiorniamo la variabile interna
     OrbitRadius = TargetOrbitRadiusKm;
     SailDistanceFromEarth = OrbitRadius;
-    double OrbitRadiusMeters = OrbitRadius * 1000.0;
-    InitialOrbitVelocityModule = FMath::Sqrt((Manager->GRAVITATIONAL_CONSTANT * Manager->EARTH_MASS) / OrbitRadiusMeters);
-    InitialOrbitVelocityVersor = FVector3d::CrossProduct(RadialDir, FVector3d(0, 0, 1)).GetSafeNormal();
-    if(InitialOrbitVelocityVersor.IsNearlyZero()) {
-        InitialOrbitVelocityVersor = FVector3d(1, 0, 0); 
-        UE_LOG(LogTemp, Warning, TEXT("[%s] Attenzione: Vela posizionata sopra i poli. Reset versore velocità su asse X."), *SailName);
-    }
-    InitialOrbitVelocity = InitialOrbitVelocityVersor * InitialOrbitVelocityModule;
-    SAIL_MESH->SetPhysicsLinearVelocity(InitialOrbitVelocity);
     UE_LOG(LogTemp, Warning, TEXT("[%s] Posizionata a %.2f Km. Velocità orbitale richiesta: %.3f m/s"), *SailName, OrbitRadius, InitialOrbitVelocityModule);
 }
 
@@ -119,12 +121,27 @@ void ASolarSail::SetInitialRotations() {
     UE_LOG(LogTemp, Warning, TEXT("[%s] Rotazione iniziale impostata. Normale vela allineata alla tangente orbitale."), *SailName);
 }
 
-void ASolarSail::InitializeCSVReporting() {
-    if (!Manager || !Manager->EnableCSVLogging) {
-        UE_LOG(LogTemp, Log, TEXT("[%s] Logging CSV disabilitato dal Manager."), *SailName);
-        CsvFilePath = TEXT("");
+void ASolarSail::SetInitialVelocity() {
+    if (!IsValid(Manager) || !IsValid(SAIL_MESH)) {
+        UE_LOG(LogTemp, Warning, TEXT("[%s] SailMesh o Manager non validi! Impossibile impostare velocità iniziale."), *SailName);
         return;
     }
+    FVector3d CurrentPos = FVector3d(GetActorLocation());
+    FVector3d EarthPosUU = Manager->EARTH_POSITION * Manager->KM_TO_UU;    
+    FVector3d RadialDir = (CurrentPos - EarthPosUU).GetSafeNormal();
+    double OrbitRadiusMeters = OrbitRadius * 1000.0;
+    InitialOrbitVelocityModule = FMath::Sqrt((Manager->GRAVITATIONAL_CONSTANT * Manager->EARTH_MASS) / OrbitRadiusMeters);
+    InitialOrbitVelocityVersor = FVector3d::CrossProduct(RadialDir, FVector3d(0, 0, 1)).GetSafeNormal();
+    if(InitialOrbitVelocityVersor.IsNearlyZero()) {
+        InitialOrbitVelocityVersor = FVector3d(1, 0, 0); 
+        UE_LOG(LogTemp, Warning, TEXT("[%s] Attenzione: Vela posizionata sopra i poli. Reset versore velocità su asse X."), *SailName);
+    }
+    InitialOrbitVelocity = InitialOrbitVelocityVersor * InitialOrbitVelocityModule;
+    SAIL_MESH->SetPhysicsLinearVelocity(InitialOrbitVelocity);
+    UE_LOG(LogTemp, Warning, TEXT("[%s] Velocità orbitale iniziale impostata a %.3f m/s"), *SailName, InitialOrbitVelocityModule);
+}
+
+void ASolarSail::InitializeCSVReporting() {
     FString ProjectDir = FPaths::ProjectDir();
     FString CsvsDir = FPaths::Combine(ProjectDir, TEXT("Csvs"));
     if (!IFileManager::Get().MakeDirectory(*CsvsDir, true)) {
@@ -141,12 +158,6 @@ void ASolarSail::UpdateGravityForce() {
     if (!SAIL_MESH || !Manager) {
         return;
     }
-    if (!Manager->EnableGravity) {
-        GravityForce = FVector3d::Zero();
-        GravityForceModule = 0.0;
-        GravityForceVersor = FVector3d::Zero();
-        return;
-    }
     FVector3d GravityAccel = Manager->GetEarthGravityAccelerationAt(SailPosition, SailDistanceFromEarth);
     GravityForce = GravityAccel * SAIL_MASS;
     GravityForceModule = GravityForce.Size();
@@ -155,71 +166,90 @@ void ASolarSail::UpdateGravityForce() {
     SAIL_MESH->AddForce(GravityForce);
     UE_LOG(LogTemp, VeryVerbose, TEXT("[%s] Gravità applicata: %.2f N"), *SailName, GravityForceModule);
 }
+/*
+void ASolarSail::UpdateSailRotation(float DeltaTime) {
+    if (!Manager || !SAIL_MESH) {
+        return;
+    }
+    FVector3d EarthPosUU = Manager->EARTH_POSITION * Manager->KM_TO_UU;
+    FVector3d RadialDir = (SailPosition - EarthPosUU).GetSafeNormal();
+    FVector3d TangentDir = FVector3d::CrossProduct(RadialDir, FVector3d(0, 0, 1)).GetSafeNormal();
+    if (TangentDir.IsNearlyZero()) {
+        TangentDir = FVector3d(1, 0, 0);
+    }
+    FRotator TargetRot = FRotationMatrix::MakeFromZ(FVector(TangentDir)).Rotator();
+    FRotator CurrentRot = GetActorRotation();
+    float InterpSpeed = 2.0f; 
+    FRotator NewRot = FMath::RInterpTo(CurrentRot, TargetRot, DeltaTime, InterpSpeed);
+    SetActorRotation(NewRot);
+    SailNormal = FVector3d(GetActorUpVector());
+    FVector3d SunPosUU = Manager->SUN_POSITION * Manager->KM_TO_UU;
+    SunDirection = (SunPosUU - SailPosition).GetSafeNormal();
+    CosTheta = FMath::Clamp(FVector3d::DotProduct(SunDirection, SailNormal), 0.0, 1.0);
+    IncidenceAngle = FMath::RadiansToDegrees(FMath::Acos(CosTheta));
+}
+*/
 
 void ASolarSail::UpdateSailRotation(float DeltaTime) {
     if (!Manager || !SAIL_MESH) {
         return;
     }
 
-    // --- 1. Calcolo dei vettori geometrici ---
-    FVector3d EarthPosUU = Manager->EARTH_POSITION * Manager->KM_TO_UU;
-    
-    // Vettore che va dalla Terra alla Vela (Raggio)
-    FVector3d RadialDir = (SailPosition - EarthPosUU).GetSafeNormal();
-
-    // Vettore Tangente (Direzione della Velocità Orbitale)
-    // Lo calcoliamo matematicamente come perpendicolare al raggio e all'asse Z del mondo
-    FVector3d TangentDir = FVector3d::CrossProduct(RadialDir, FVector3d(0, 0, 1)).GetSafeNormal();
-
-    // Correzione per orbite polari (se siamo esattamente sopra il polo)
-    if (TangentDir.IsNearlyZero()) {
-        TangentDir = FVector3d(1, 0, 0);
+    // --- 1. GESTIONE MOVIMENTO/ROTAZIONE FISICA (Invariata) ---
+    // Questo ruota la mesh nello spazio.
+    if (Manager->EnableGravity) {
+        FVector3d EarthPosUU = Manager->EARTH_POSITION * Manager->KM_TO_UU;
+        FVector3d RadialDir = (SailPosition - EarthPosUU).GetSafeNormal();
+        FVector3d TangentDir = FVector3d::CrossProduct(RadialDir, FVector3d(0, 0, 1)).GetSafeNormal();
+        
+        if (TangentDir.IsNearlyZero()) {
+            TangentDir = FVector3d(1, 0, 0);
+        }
+        if (FVector3d::DotProduct(TangentDir, SunDirection) < 0) {
+            TangentDir = -TangentDir;
+        }
+        FRotator TargetRot = FRotationMatrix::MakeFromZ(FVector(TangentDir)).Rotator();
+        FRotator CurrentRot = GetActorRotation();
+        float InterpSpeed = 2.0f; 
+        FRotator NewRot = FMath::RInterpTo(CurrentRot, TargetRot, DeltaTime, InterpSpeed);
+        SetActorRotation(NewRot);
     }
 
-    // --- 2. Definizione della Rotazione Target ---
-    // Vogliamo che la NORMALE (Asse Z/Blu della mesh) guardi lungo la TANGENTE.
-    // Usiamo MakeFromZ per dire a Unreal: "L'asse Z deve puntare in questa direzione".
-    FRotator TargetRot = FRotationMatrix::MakeFromZ(FVector(TangentDir)).Rotator();
-
-    // --- 3. Interpolazione Fluida (RInterpTo) ---
-    FRotator CurrentRot = GetActorRotation();
+    // --- 2. CALCOLO VETTORI PER LA FISICA (La parte "Smart") ---
     
-    // Velocità di rotazione: puoi usare una variabile come RotationSpeed o un valore fisso (es. 2.0f)
-    float InterpSpeed = 2.0f; 
-    FRotator NewRot = FMath::RInterpTo(CurrentRot, TargetRot, DeltaTime, InterpSpeed);
-    
-    SetActorRotation(NewRot);
-
-    // --- 4. Aggiornamento Variabili Fisiche ---
-    // Ora la normale è l'UpVector, che sta puntando lungo la tangente
-    SailNormal = FVector3d(GetActorUpVector());
-    
-    // Ricalcoliamo l'angolo rispetto al Sole per la fisica
+    // Calcoliamo dove sta il sole rispetto a noi
     FVector3d SunPosUU = Manager->SUN_POSITION * Manager->KM_TO_UU;
     SunDirection = (SunPosUU - SailPosition).GetSafeNormal();
-    
-    CosTheta = FMath::Clamp(FVector3d::DotProduct(SunDirection, SailNormal), 0.0, 1.0);
-    IncidenceAngle = FMath::RadiansToDegrees(FMath::Acos(CosTheta));
-}
 
+    // Prendiamo la normale "vera" della mesh
+    FVector3d RawNormal = FVector3d(GetActorUpVector());
+    
+    // Calcoliamo l'allineamento (+1 = fronte al sole, -1 = retro al sole)
+    double Alignment = FVector3d::DotProduct(SunDirection, RawNormal);
+
+    // LOGICA DOUBLE SIDED
+    if (Alignment < 0) {
+        // Il sole colpisce il RETRO
+        if (DoubleSidedSail) {
+            // Se è doppia faccia: INVERTIAMO la normale virtuale.
+            // Così la forza verrà calcolata come se avessimo colpito il fronte.
+            SailNormal = -RawNormal; 
+            CosTheta = FMath::Abs(Alignment); // Usiamo l'assoluto (diventa positivo)
+        } else {
+            // Se è singola faccia: Il retro non spinge.
+            SailNormal = RawNormal;
+            CosTheta = 0.0; // Forza azzerata
+        }
+    } else {
+        // Il sole colpisce il FRONTE (tutto normale)
+        SailNormal = RawNormal;
+        CosTheta = Alignment; // È già positivo
+    }
+
+    // Solo per debug visivo
+    IncidenceAngle = FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(CosTheta, 0.0, 1.0)));
+}
 /*
-void ASolarSail::AlignSailNormal() {
-    if (!Manager) {
-        return;
-    }
-    FVector3d SunPosUU = Manager->SUN_POSITION * Manager->KM_TO_UU;
-    SunDirection = (SunPosUU - SailPosition).GetSafeNormal();
-    FVector3d EarthPosUU = Manager->EARTH_POSITION * Manager->KM_TO_UU;
-    FVector3d RadialDir = (SailPosition - EarthPosUU).GetSafeNormal();
-    FVector3d TangentDir = FVector3d::CrossProduct(RadialDir, FVector3d(0, 0, 1)).GetSafeNormal();
-    FRotator NewRot = FRotationMatrix::MakeFromXZ(FVector(TangentDir), FVector(RadialDir)).Rotator();
-    SetActorRotation(NewRot);
-    SailNormal = FVector3d(GetActorUpVector());
-    CosTheta = FMath::Clamp(FVector3d::DotProduct(SunDirection, SailNormal), 0.0, 1.0);
-    IncidenceAngle = FMath::RadiansToDegrees(FMath::Acos(CosTheta));
-}
-*/
-
 void ASolarSail::UpdateSolarForce(float DeltaTime) {
     if (!Manager || !SAIL_MESH) {
         return;
@@ -232,32 +262,27 @@ void ASolarSail::UpdateSolarForce(float DeltaTime) {
         case EReflectivityPreset::Perfect:   SelectedReflectivityFactor = RFACTOR_PERFECT;   break;
         case EReflectivityPreset::Custom:    SelectedReflectivityFactor = RFACTOR_CUSTOM;    break;
     }
-    if (!Manager->EnableSolarPressure) {
-        SolarForce = FVector3d::Zero();
-        SolarForceModule = 0.0;
-        SolarForceVersor = FVector3d::Zero();
-        SolarPressure = 0.0;
-        ActivePhotons = 0;
-        return;
-    }
     RaycastTimer += DeltaTime;
     if (RaycastTimer < RaycastInterval) {
-        SAIL_MESH->AddForce(SolarForce);
+        if (!SolarForce.ContainsNaN()) {
+             SAIL_MESH->AddForce(SolarForce);
+        }
         return;
     }
     RaycastTimer = 0.0f;
     ActivePhotons = 0;
-    TotalPhotons = Manager->GridResolution * Manager->GridResolution;
+    int32 SafeResolution = FMath::Max(1, GridResolution);
+    TotalPhotons = SafeResolution * SafeResolution;
     FVector3d AccumulatedForce = FVector3d::Zero();
     double GridSizeUU = 100.0 * SAIL_SCALE; 
-    double Step = GridSizeUU / Manager->GridResolution;
+    double Step = GridSizeUU / SafeResolution;
     double AreaPerRay = SAIL_AREA / TotalPhotons;
     FVector3d Right = FVector3d(GetActorRightVector());
     FVector3d Forward = FVector3d(GetActorForwardVector());
-    for (int32 i = 0; i < Manager->GridResolution; i++) {
-        for (int32 j = 0; j < Manager->GridResolution; j++) {
-            double OffX = (i - Manager->GridResolution / 2.0) * Step;
-            double OffY = (j - Manager->GridResolution / 2.0) * Step;
+    for (int32 i = 0; i < SafeResolution; i++) {
+        for (int32 j = 0; j < SafeResolution; j++) {
+            double OffX = (i - SafeResolution / 2.0) * Step;
+            double OffY = (j - SafeResolution / 2.0) * Step;
             FVector3d SamplePos = SailPosition + (Forward * OffX) + (Right * OffY);
             FHitResult Hit;
             FCollisionQueryParams P;
@@ -267,7 +292,7 @@ void ASolarSail::UpdateSolarForce(float DeltaTime) {
                 ActivePhotons++;
                 SolarPressure = Manager->GetSolarPressureAt(SamplePos, SailDistanceFromSun);
                 double ForceMag = SelectedReflectivityFactor * SolarPressure * AreaPerRay * (CosTheta * CosTheta) * 2.0;
-                AccumulatedForce += SailNormal * ForceMag;
+                AccumulatedForce += (-SailNormal) * ForceMag;
                 if (Manager->ShowPhotonDebug) {
                     DrawDebugLine(GetWorld(), FVector(SamplePos), FVector(SamplePos - SunDirection * 200.0), FColor::Green, false, 0.05f, 0, 0.5f);
                 }
@@ -279,6 +304,125 @@ void ASolarSail::UpdateSolarForce(float DeltaTime) {
     SolarForce = AccumulatedForce;
     SolarForceModule = SolarForce.Size();
     SolarForceVersor = SolarForce.GetSafeNormal();
+    SAIL_MESH->AddForce(SolarForce);
+}
+*/
+
+void ASolarSail::UpdateSolarForce(float DeltaTime) {
+    if (!Manager || !SAIL_MESH) {
+        return;
+    }
+
+    // 1. Selezione del fattore di riflettività
+    double SelectedReflectivityFactor = 0.0;
+    switch (Reflectivity_Factor) {
+        case EReflectivityPreset::Absorber:  SelectedReflectivityFactor = RFACTOR_ABSORBER;  break;
+        case EReflectivityPreset::Medium:    SelectedReflectivityFactor = RFACTOR_MEDIUM;    break;
+        case EReflectivityPreset::Realistic: SelectedReflectivityFactor = RFACTOR_REALISTIC; break;
+        case EReflectivityPreset::Perfect:   SelectedReflectivityFactor = RFACTOR_PERFECT;   break;
+        case EReflectivityPreset::Custom:    SelectedReflectivityFactor = RFACTOR_CUSTOM;    break;
+    }
+
+    // 2. Timer per il Raycasting (Ottimizzazione Performance)
+    RaycastTimer += DeltaTime;
+    if (RaycastTimer < RaycastInterval) {
+        // Se non è ancora tempo di ricalcolare, applichiamo la vecchia forza calcolata
+        if (!SolarForce.ContainsNaN()) {
+             SAIL_MESH->AddForce(SolarForce);
+        }
+        return;
+    }
+    // Reset del timer
+    RaycastTimer = 0.0f;
+
+    // 3. Setup della Griglia
+    ActivePhotons = 0;
+    int32 SafeResolution = FMath::Max(1, GridResolution);
+    TotalPhotons = SafeResolution * SafeResolution;
+    
+    FVector3d AccumulatedForce = FVector3d::Zero();
+    
+    double GridSizeUU = 100.0 * SAIL_SCALE; 
+    double Step = GridSizeUU / SafeResolution;
+    double AreaPerRay = SAIL_AREA / TotalPhotons;
+
+    FVector3d Right = FVector3d(GetActorRightVector());
+    FVector3d Forward = FVector3d(GetActorForwardVector());
+    
+    // OTTIMIZZAZIONE: Calcoliamo posizione Sole e Parametri Collisione FUORI dal loop
+    FVector3d SunPosUU = Manager->SUN_POSITION * Manager->KM_TO_UU;
+    
+    FCollisionQueryParams P;
+    P.AddIgnoredActor(this); // La vela non deve farsi ombra da sola
+    P.bTraceComplex = true; // Usa collisioni complesse per maggiore accuratezza
+
+    // Lunghezza visiva delle linee di debug (200 unità = 2 metri)
+    float DebugLineLen = 200.0f;
+
+    // 4. Ciclo Raycasting sulla Griglia
+    for (int32 i = 0; i < SafeResolution; i++) {
+        for (int32 j = 0; j < SafeResolution; j++) {
+            
+            // Calcolo posizione del punto sulla vela
+            double OffX = (i - SafeResolution / 2.0) * Step;
+            double OffY = (j - SafeResolution / 2.0) * Step;
+            FVector3d SamplePos = SailPosition + (Forward * OffX) + (Right * OffY);
+            
+            double CheckDistance = 50000.0 * Manager->KM_TO_UU; // 50 Km in Unità Unreal
+            
+            FVector3d RayStart = SamplePos + (SunDirection * CheckDistance);
+            FVector3d RayEnd   = SamplePos;
+
+            FHitResult Hit;
+
+            // Lanciamo il raggio dal Sole verso la Vela
+            // Se Hit == true, c'è un ostacolo (Ombra)
+           bool bIsOccluded = GetWorld()->LineTraceSingleByChannel(
+                Hit, 
+                FVector(RayStart), // Start (50km verso il sole)
+                FVector(RayEnd),   // End (Sulla vela)
+                ECC_Visibility, 
+                P
+            );
+
+            // --- Calcolo vettori per DEBUG VISIVO (Linee corte) ---
+            // Start: Un punto in aria verso il sole
+            // End: La superficie della vela
+            FVector VisualStart = FVector(SamplePos + (SunDirection * DebugLineLen)); 
+            FVector VisualEnd   = FVector(SamplePos);
+
+            if (!bIsOccluded) {
+                // --- CASO LUCE (FOTONE ATTIVO) ---
+                ActivePhotons++;
+                SolarPressure = Manager->GetSolarPressureAt(SamplePos, SailDistanceFromSun);
+                
+                // Calcolo della forza
+                // Nota: CosTheta viene calcolato in UpdateSailRotation ed è sempre >= 0
+                double ForceMag = SelectedReflectivityFactor * SolarPressure * AreaPerRay * (CosTheta * CosTheta);
+                
+                // Applicazione Forza: Opposta alla normale (-SailNormal)
+                AccumulatedForce += (-SailNormal) * ForceMag;
+
+                if (Manager->ShowPhotonDebug) {
+                    // Disegna linea VERDE corta
+                    // LifeTime = RaycastInterval (Niente flashing)
+                    DrawDebugLine(GetWorld(), VisualStart, VisualEnd, FColor::Green, false, RaycastInterval, 0, 1.5f);
+                }
+            } else {
+                // --- CASO OMBRA (FOTONE BLOCCATO) ---
+                if (Manager->ShowPhotonDebug) {
+                    // Disegna linea ROSSA corta (mostra che qui non arriva spinta)
+                    DrawDebugLine(GetWorld(), VisualStart, VisualEnd, FColor::Red, false, RaycastInterval, 0, 1.5f);
+                }
+            }
+        }
+    }
+
+    // 5. Aggiornamento Variabili Pubbliche e Applicazione Fisica
+    SolarForce = AccumulatedForce;
+    SolarForceModule = SolarForce.Size();
+    SolarForceVersor = SolarForce.GetSafeNormal();
+    
     SAIL_MESH->AddForce(SolarForce);
 }
 
@@ -304,12 +448,58 @@ void ASolarSail::AppendDataToCSV(float DeltaTime) {
     }
 }
 
+// void ASolarSail::DebugVisuals() {
+//     if (!Manager || !GEngine) {
+//         return;
+//     }
+//     FVector SailLoc = GetActorLocation();
+//     int32 UID = GetTypeHash(SailName) % 1000; 
+//     if (Manager->ShowSailEarthDistanceDebug) {
+//         DrawDebugLine(GetWorld(), SailLoc, FVector(Manager->EARTH_POSITION * Manager->KM_TO_UU), FColor::Cyan, false, -1, 0, 2.0f);
+//     }
+//     if (Manager->ShowSailSunDistanceDebug) {
+//         DrawDebugLine(GetWorld(), SailLoc, FVector(Manager->SUN_POSITION * Manager->KM_TO_UU), FColor::Yellow, false, -1, 0, 2.0f);
+//     }
+//     if (Manager->ShowEarthSunDistanceDebug) {
+//         DrawDebugLine(GetWorld(), FVector(Manager->EARTH_POSITION * Manager->KM_TO_UU), FVector(Manager->SUN_POSITION * Manager->KM_TO_UU), FColor::Orange, false, -1, 0, 1.0f);
+//     }
+//     const float ArrowLen = 1000.0f;
+//     if (Manager->ShowSailNormalDebug) {
+//         DrawDebugDirectionalArrow(GetWorld(), SailLoc, SailLoc + (FVector(SailNormal) * ArrowLen), 150.f, FColor::Green, false, -1, 0, 5.0f);
+//     }
+//     if (Manager->ShowSolarForceDebug) {
+//         DrawDebugDirectionalArrow(GetWorld(), SailLoc, SailLoc + (FVector(SolarForceVersor) * ArrowLen), 150.f, FColor::Red, false, -1, 0, 5.0f);
+//     }
+//     if (Manager->ShowGravityForceDebug) {
+//         DrawDebugDirectionalArrow(GetWorld(), SailLoc, SailLoc + (FVector(GravityForceVersor) * ArrowLen), 150.f, FColor::Blue, false, -1, 0, 5.0f);
+//     }
+//     if (Manager->ShowTotalForceDebug) {
+//         DrawDebugDirectionalArrow(GetWorld(), SailLoc, SailLoc + (FVector(TotalForce.GetSafeNormal()) * ArrowLen), 200.f, FColor::Magenta, false, -1, 0, 7.0f);
+//     }
+//     FColor StatusColor = (ActivePhotons > 0) ? FColor::Green : FColor::Red;
+//     float Efficiency = (TotalPhotons > 0) ? ((float)ActivePhotons / (float)TotalPhotons) * 100.0f : 0.0f;
+//     GEngine->AddOnScreenDebugMessage(UID + 0, 0.0f, FColor::Cyan  , FString::Printf(TEXT("═══ [%s] SIM STATUS ═══"), *SailName));
+//     GEngine->AddOnScreenDebugMessage(UID + 1, 0.0f, FColor::White , FString::Printf(TEXT("  Orbita: %.2f Km | Vel: %.3f Km/s"), SailDistanceFromEarth, SailVelocity.Size()));
+//     GEngine->AddOnScreenDebugMessage(UID + 2, 0.0f, StatusColor   , FString::Printf(TEXT("  Raggi: %.0f/%d (%.1f%% Attivi)"), (double)ActivePhotons, TotalPhotons, Efficiency));
+//     GEngine->AddOnScreenDebugMessage(UID + 3, 0.0f, FColor::Yellow, FString::Printf(TEXT("  Spinta: %.2e N | Angolo: %.1f°"), SolarForceModule, IncidenceAngle));
+//     GEngine->AddOnScreenDebugMessage(UID + 4, 0.0f, FColor::Silver, FString::Printf(TEXT("  Massa: %.1f Kg | Area: %.1f m²"), SAIL_MASS, SAIL_AREA));
+//     GEngine->AddOnScreenDebugMessage(UID + 5, 0.0f, FColor::Cyan  ,                 TEXT("═══════════════════════"));
+// }
+
 void ASolarSail::DebugVisuals() {
     if (!Manager || !GEngine) {
         return;
     }
+
     FVector SailLoc = GetActorLocation();
+    
+    // Usiamo un Hash del nome per avere un ID unico per i messaggi a schermo
+    // Questo permette di aggiornare il testo invece di spammarne di nuovi
     int32 UID = GetTypeHash(SailName) % 1000; 
+
+    // --- DISEGNO LINEE E FRECCE (Vettori) ---
+    // Qui usiamo lifetime -1 (o breve) perché queste linee si aggiornano ad ogni frame del Tick.
+    
     if (Manager->ShowSailEarthDistanceDebug) {
         DrawDebugLine(GetWorld(), SailLoc, FVector(Manager->EARTH_POSITION * Manager->KM_TO_UU), FColor::Cyan, false, -1, 0, 2.0f);
     }
@@ -319,7 +509,9 @@ void ASolarSail::DebugVisuals() {
     if (Manager->ShowEarthSunDistanceDebug) {
         DrawDebugLine(GetWorld(), FVector(Manager->EARTH_POSITION * Manager->KM_TO_UU), FVector(Manager->SUN_POSITION * Manager->KM_TO_UU), FColor::Orange, false, -1, 0, 1.0f);
     }
+
     const float ArrowLen = 1000.0f;
+
     if (Manager->ShowSailNormalDebug) {
         DrawDebugDirectionalArrow(GetWorld(), SailLoc, SailLoc + (FVector(SailNormal) * ArrowLen), 150.f, FColor::Green, false, -1, 0, 5.0f);
     }
@@ -332,19 +524,30 @@ void ASolarSail::DebugVisuals() {
     if (Manager->ShowTotalForceDebug) {
         DrawDebugDirectionalArrow(GetWorld(), SailLoc, SailLoc + (FVector(TotalForce.GetSafeNormal()) * ArrowLen), 200.f, FColor::Magenta, false, -1, 0, 7.0f);
     }
+
+    // --- TELEMETRIA A SCHERMO (UI Testuale) ---
+
+    // FIX FLICKERING: Impostiamo una durata di 1 secondo (1.0f).
+    // Se metti 0.0f, il testo dura un solo frame e scompare se il mouse si muove o l'editor lagga.
+    float MsgDuration = 1.0f;
+
     FColor StatusColor = (ActivePhotons > 0) ? FColor::Green : FColor::Red;
     float Efficiency = (TotalPhotons > 0) ? ((float)ActivePhotons / (float)TotalPhotons) * 100.0f : 0.0f;
-    GEngine->AddOnScreenDebugMessage(UID + 0, 0.0f, FColor::Cyan, FString::Printf(TEXT("═══ [%s] SIM STATUS ═══"), *SailName));
-    GEngine->AddOnScreenDebugMessage(UID + 1, 0.0f, FColor::White, FString::Printf(TEXT("  Orbita: %.2f Km | Vel: %.3f Km/s"), SailDistanceFromEarth, SailVelocity.Size()));
-    GEngine->AddOnScreenDebugMessage(UID + 2, 0.0f, StatusColor,   FString::Printf(TEXT("  Raggi: %.0f/%d (%.1f%% Attivi)"), (double)ActivePhotons, TotalPhotons, Efficiency));
-    GEngine->AddOnScreenDebugMessage(UID + 3, 0.0f, FColor::Yellow, FString::Printf(TEXT("  Spinta: %.2e N | Angolo: %.1f°"), SolarForceModule, IncidenceAngle));
-    GEngine->AddOnScreenDebugMessage(UID + 4, 0.0f, FColor::Silver, FString::Printf(TEXT("  Massa: %.1f Kg | Area: %.1f m²"), SAIL_MASS, SAIL_AREA));
-    GEngine->AddOnScreenDebugMessage(UID + 5, 0.0f, FColor::Cyan,  TEXT("═══════════════════════"));
+    
+    // Aggiungo info visuale sul tipo di faccia (Singola/Doppia)
+    FString SideInfo = DoubleSidedSail ? TEXT("DOPPIA FACCIA") : TEXT("SINGOLA FACCIA");
+
+    GEngine->AddOnScreenDebugMessage(UID + 0, MsgDuration, FColor::Cyan  , FString::Printf(TEXT("═══ [%s] SIM STATUS (%s) ═══"), *SailName, *SideInfo));
+    GEngine->AddOnScreenDebugMessage(UID + 1, MsgDuration, FColor::White , FString::Printf(TEXT("  Orbita: %.2f Km | Vel: %.3f Km/s"), SailDistanceFromEarth, SailVelocity.Size()));
+    GEngine->AddOnScreenDebugMessage(UID + 2, MsgDuration, StatusColor   , FString::Printf(TEXT("  Raggi: %.0f/%d (%.1f%% Attivi)"), (double)ActivePhotons, TotalPhotons, Efficiency));
+    GEngine->AddOnScreenDebugMessage(UID + 3, MsgDuration, FColor::Yellow, FString::Printf(TEXT("  Spinta: %.2e N | Angolo: %.1f°"), SolarForceModule, IncidenceAngle));
+    GEngine->AddOnScreenDebugMessage(UID + 4, MsgDuration, FColor::Silver, FString::Printf(TEXT("  Massa: %.1f Kg | Area: %.1f m²"), SAIL_MASS, SAIL_AREA));
+    GEngine->AddOnScreenDebugMessage(UID + 5, MsgDuration, FColor::Cyan  ,                 TEXT("══════════════════════════════"));
 }
 
 void ASolarSail::Tick(float DeltaTime) {
     Super::Tick(DeltaTime);
-    if (!Manager || !SAIL_MESH || !GEngine) {
+    if (!IsValid(Manager) || !IsValid(SAIL_MESH) || !GEngine) {
         return;
     }
     this->CustomTimeDilation = Manager->TimeScale;
@@ -352,16 +555,37 @@ void ASolarSail::Tick(float DeltaTime) {
     SailDistanceFromEarth = FVector3d::Distance(GetActorLocation(), Manager->EARTH_POSITION * Manager->KM_TO_UU) * Manager->UU_TO_KM;
     SailDistanceFromSun = FVector3d::Distance(GetActorLocation(), Manager->SUN_POSITION * Manager->KM_TO_UU) * Manager->UU_TO_KM;
     OrbitRadius = SailDistanceFromEarth;
-    UpdateGravityForce();
+
     UpdateSailRotation(DeltaTime);
-    //AlignSailNormal();
-    UpdateSolarForce(DeltaTime);
+    if(Manager->EnableGravity) {
+        UpdateGravityForce();
+        //AlignSailNormal();
+    } else {
+        GravityForce = FVector3d::Zero();
+        GravityForceModule = 0.0;
+        GravityForceVersor = FVector3d::Zero();
+    }
+    if(Manager->EnableSolarPressure) {
+        UpdateSolarForce(DeltaTime);
+    } else {
+        SolarForce = FVector3d::Zero();
+        SolarForceModule = 0.0;
+        SolarForceVersor = FVector3d::Zero();
+        SolarPressure = 0.0;
+        ActivePhotons = 0;
+    }
     TotalForce = GravityForce + SolarForce;
     FVector3d AccelMetersS2 = TotalForce / SAIL_MASS;
-    SailAcceleration = AccelMetersS2 / 1000.0; 
+    SailAcceleration = AccelMetersS2 / 1000.0;
+
+    
     SailVelocity = FVector3d(SAIL_MESH->GetPhysicsLinearVelocity()) * Manager->UU_TO_KM;
-    AppendDataToCSV(DeltaTime);
-    DebugVisuals();
+    if(Manager->EnableCSVLogging) {
+        AppendDataToCSV(DeltaTime);
+    }
+    if(Manager->ShowDebugTelemetry) {
+        DebugVisuals();
+    }
 }
 
 void ASolarSail::EndPlay(const EEndPlayReason::Type EndPlayReason) {

@@ -7,6 +7,7 @@ ASimulationManager::ASimulationManager() {
 }
 
 void ASimulationManager::BeginPlay() {
+    Instance = this;
     Super::BeginPlay();
     FString CsvDir = FPaths::Combine(FPaths::ProjectDir(), TEXT("Csvs"));
     if (IFileManager::Get().DirectoryExists(*CsvDir)) {
@@ -19,7 +20,6 @@ void ASimulationManager::BeginPlay() {
         }
         UE_LOG(LogTemp, Warning, TEXT("[SimulationManager] Cartella 'Csvs' ripulita (%d file rimossi)."), FoundFiles.Num());
     }
-    Instance = this;
 
     checkf(EARTH_MESH_ACTOR, TEXT("[SimulationManager] EARTH_MESH_ACTOR non assegnato nel pannello Details!"));
     checkf(SUN_MESH_ACTOR,   TEXT("[SimulationManager] SUN_MESH_ACTOR non assegnato nel pannello Details!"));

@@ -25,7 +25,7 @@ Perfect   UMETA(DisplayName = "2.0 — Riflettente perfetto"),
 Custom    UMETA(DisplayName = "Custom")
 };
 
-UCLASS(HideCategories = (Rendering, Replication, Input, Actor, LOD, Cooking, Collision, HLOD, DataLayers, Networking))
+UCLASS()
 class SIMULATION_API ASolarSail : public AActor {
     GENERATED_BODY()
 
@@ -37,6 +37,8 @@ public:
     UPROPERTY(EditAnywhere   , Category = "Sail Parameters | Sail"                           , meta = (DisplayName = "Area della Vela (m^2)"                                                                                            , ClampMin = "9.3"  , ClampMax = "1672.0"  )) double                           SAIL_AREA                  = 100.0;
     UPROPERTY(EditAnywhere   , Category = "Sail Parameters | Sail"                           , meta = (DisplayName = "Massa della Vela (Kg)"                                                                                            , ClampMin = "0.1"  , ClampMax = "307"     )) double                           SAIL_MASS                  = 90.0;
     UPROPERTY(EditAnywhere   , Category = "Sail Parameters | Sail"                           , meta = (DisplayName = "Proporzione della Vela"                                                                                           , ClampMin = "1.0"  , ClampMax = "50.0"    )) double                           SAIL_SCALE                 = 12.0;
+    UPROPERTY(EditAnywhere   , Category = "Sail Parameters | Sail"                           , meta = (DisplayName = "Risoluzione della Griglia"                                                                                        , ClampMin = "1"    , ClampMax = "100"     )) int32                            GridResolution             = 10;
+    UPROPERTY(EditAnywhere   , Category = "Sail Parameters | Sail"                           , meta = (DisplayName = "Vela Doppia Faccia"                                                                                                                                          )) bool                             DoubleSidedSail            = false;
     UPROPERTY(EditAnywhere   , Category = "Sail Parameters | Orbit"                          , meta = (DisplayName = "Tipo di Orbita Iniziale"                                                                                                                                     )) EOrbitStartType                  OrbitType                  = EOrbitStartType::Geostationary;
     UPROPERTY(VisibleAnywhere, Category = "Sail Parameters | Orbit"                          , meta = (DisplayName = "Quota LEO"      , EditCondition = "OrbitType == EOrbitStartType::LEO_ISS"                     , EditConditionHides                                           )) double                           ORBIT_LEO                  = 400.0;
     UPROPERTY(VisibleAnywhere, Category = "Sail Parameters | Orbit"                          , meta = (DisplayName = "Quota GPS"      , EditCondition = "OrbitType == EOrbitStartType::MEO_GPS"                     , EditConditionHides                                           )) double                           ORBIT_GPS                  = 20200.0;
@@ -64,7 +66,7 @@ public:
     UPROPERTY(VisibleAnywhere, Category = "Sail Parameters | Live Telemetry | Solar Pressure", meta = (DisplayName = "Materiale medio"     , EditCondition = "Reflectivity_Factor == EReflectivityPreset::Medium"   , EditConditionHides                                           )) double                           RFACTOR_MEDIUM             = 1.5;
     UPROPERTY(VisibleAnywhere, Category = "Sail Parameters | Live Telemetry | Solar Pressure", meta = (DisplayName = "Vela Realistica"     , EditCondition = "Reflectivity_Factor == EReflectivityPreset::Realistic", EditConditionHides                                           )) double                           RFACTOR_REALISTIC          = 1.8;
     UPROPERTY(VisibleAnywhere, Category = "Sail Parameters | Live Telemetry | Solar Pressure", meta = (DisplayName = "Riflettente perfetto", EditCondition = "Reflectivity_Factor == EReflectivityPreset::Perfect"  , EditConditionHides                                           )) double                           RFACTOR_PERFECT            = 2.0;
-    UPROPERTY(EditAnywhere   , Category = "Sail Parameters | Live Telemetry | Solar Pressure", meta = (DisplayName = "Custom"              , EditCondition = "Reflectivity_Factor == EReflectivityPreset::Custom"   , EditConditionHides, ClampMin = "0.0". , ClampMax = "2.0"     )) double                           RFACTOR_CUSTOM             = 1.5;
+    UPROPERTY(EditAnywhere   , Category = "Sail Parameters | Live Telemetry | Solar Pressure", meta = (DisplayName = "Custom"              , EditCondition = "Reflectivity_Factor == EReflectivityPreset::Custom"   , EditConditionHides, ClampMin = "0.0"  , ClampMax = "2.0"     )) double                           RFACTOR_CUSTOM             = 1.5;
     UPROPERTY(VisibleAnywhere, Category = "Sail Parameters | Live Telemetry | Solar Pressure", meta = (DisplayName = "Pressione Solare (Pa)"                                                                                                                                       )) double                           SolarPressure              = 0.0;
     UPROPERTY(VisibleAnywhere, Category = "Sail Parameters | Live Telemetry | Solar Pressure", meta = (DisplayName = "Versore della Forza Solare"                                                                                                                                  )) FVector3d                        SolarForceVersor           = FVector3d::Zero();
     UPROPERTY(VisibleAnywhere, Category = "Sail Parameters | Live Telemetry | Gravity Values", meta = (DisplayName = "Forza di Gravità (N)"                                                                                                                                        )) FVector3d                        GravityForce               = FVector3d::Zero();
@@ -78,7 +80,7 @@ protected:
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
-    ASimulationManager* Manager;
+    UPROPERTY() ASimulationManager* Manager;
     
     FString SailName;
     FString CsvFilePath;
@@ -92,6 +94,7 @@ private:
     void InitializePhysicsProperties();
     void SetInitialPositions();
     void SetInitialRotations();
+    void SetInitialVelocity();
     void InitializeCSVReporting();
     void UpdateGravityForce();
     void UpdateSailRotation(float DeltaTime);
