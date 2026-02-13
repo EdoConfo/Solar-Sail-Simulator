@@ -39,6 +39,7 @@ public:
     UPROPERTY(EditAnywhere   , Category = "Sail Parameters | Sail"                           , meta = (DisplayName = "Proporzione della Vela"                                                                                           , ClampMin = "1.0"  , ClampMax = "50.0"    )) double                           SAIL_SCALE                 = 12.0;
     UPROPERTY(EditAnywhere   , Category = "Sail Parameters | Sail"                           , meta = (DisplayName = "Risoluzione della Griglia"                                                                                        , ClampMin = "1"    , ClampMax = "100"     )) int32                            GridResolution             = 10;
     UPROPERTY(EditAnywhere   , Category = "Sail Parameters | Sail"                           , meta = (DisplayName = "Vela Doppia Faccia"                                                                                                                                          )) bool                             DoubleSidedSail            = false;
+    UPROPERTY(EditAnywhere   , Category = "Sail Parameters | Sail"                           , meta = (DisplayName = "Indice di Visualizzazione"                                                                                                                                   )) int32                            SailIndex                  = 0;
     UPROPERTY(EditAnywhere   , Category = "Sail Parameters | Orbit"                          , meta = (DisplayName = "Tipo di Orbita Iniziale"                                                                                                                                     )) EOrbitStartType                  OrbitType                  = EOrbitStartType::Geostationary;
     UPROPERTY(VisibleAnywhere, Category = "Sail Parameters | Orbit"                          , meta = (DisplayName = "Quota LEO"      , EditCondition = "OrbitType == EOrbitStartType::LEO_ISS"                     , EditConditionHides                                           )) double                           ORBIT_LEO                  = 400.0;
     UPROPERTY(VisibleAnywhere, Category = "Sail Parameters | Orbit"                          , meta = (DisplayName = "Quota GPS"      , EditCondition = "OrbitType == EOrbitStartType::MEO_GPS"                     , EditConditionHides                                           )) double                           ORBIT_GPS                  = 20200.0;
@@ -90,6 +91,7 @@ private:
     FString CsvBuffer;
     float CsvWriteTimer = 0.0f;
 
+    void FinishInitialization();
     bool InitializeManager();
     void InitializePhysicsProperties();
     void SetInitialPositions();
