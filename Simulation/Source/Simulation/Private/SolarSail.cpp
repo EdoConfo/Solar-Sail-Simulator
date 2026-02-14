@@ -256,31 +256,35 @@ void ASolarSail::UpdateSailRotation(float DeltaTime) {
     if (!Manager || !SAIL_MESH) return;
 
     // --- 1. MANTENIMENTO ASSETTO (Z = Avanti) ---
+    // Otteniamo la direzione reale del movimento fisico
     FVector3d VelocityDir = FVector3d(SAIL_MESH->GetPhysicsLinearVelocity());
     
+    // Agiamo solo se c'è movimento sufficiente
     if (VelocityDir.SizeSquared() > 0.1) {
         VelocityDir.Normalize();
         
-        // Manteniamo l'asse X (Rosso) stabile verso l'alto orbitale (o comunque perpendicolare)
-        FVector3d CurrentLoc = FVector3d(GetActorLocation());
-        FVector3d EarthPos = Manager->EARTH_POSITION * Manager->KM_TO_UU;
-        FVector3d Radial = (CurrentLoc - EarthPos).GetSafeNormal();
+        // CORREZIONE DEL PROBLEMA "AVVITAMENTO":
+        // Invece di ricostruire la rotazione da zero (che resetterebbe il tuo rollio),
+        // troviamo la rotazione "più breve" per portare l'asse Z attuale (Blu) 
+        // a coincidere con la direzione della Velocità.
         
-        // Normale Orbitale (Perpendicolare al piano)
-        FVector3d OrbitNormal = FVector3d::CrossProduct(Radial, VelocityDir).GetSafeNormal();
+        FVector CurrentZ = GetActorUpVector(); // Il tuo asse "Avanti" attuale
+        FVector TargetZ = (FVector)VelocityDir; // Dove deve andare
 
-        // Target: Z su Velocità, X su OrbitNormal
-        FRotator TargetRot = FRotationMatrix::MakeFromZX((FVector)VelocityDir, (FVector)OrbitNormal).Rotator();
+        // Calcoliamo il Quaterno che rappresenta questa rotazione delta
+        FQuat DeltaRot = FQuat::FindBetweenNormals(CurrentZ, TargetZ);
+
+        // Applichiamo la rotazione corrente + il delta
+        FQuat TargetQuat = DeltaRot * GetActorQuat();
+
+        // Interpolazione fluida (Slerp) per evitare scatti, ma senza resettare il rollio
+        // Aumenta 2.0f se vuoi che sia più reattiva, diminuisci se vuoi più morbidezza
+        FQuat NewQuat = FQuat::Slerp(GetActorQuat(), TargetQuat, 2.0f * DeltaTime);
         
-        FRotator NewRot = FMath::RInterpTo(GetActorRotation(), TargetRot, DeltaTime, 1.0f);
-        SetActorRotation(NewRot);
+        SetActorRotation(NewQuat);
     }
 
-    // --- 2. FISICA SOLARE ---
-    // La normale fisica per la luce è l'asse Z (Blu)... che ora guarda avanti!
-    // Se la vela è un plane piatto su XY, la normale è Z.
-    // Ma se stiamo viaggiando con Z avanti, significa che la vela è "di piatto" contro il vento (freno aerodinamico).
-    
+    // --- 2. FISICA SOLARE (Invariata) ---
     SailNormal = FVector3d(GetActorUpVector()); 
     
     FVector3d SunPosUU = Manager->SUN_POSITION * Manager->KM_TO_UU;
@@ -288,17 +292,37 @@ void ASolarSail::UpdateSailRotation(float DeltaTime) {
     
     double Alignment = FVector3d::DotProduct(SunDirection, SailNormal);
 
+    // if (Alignment < 0) {
+    //     if (DoubleSidedSail) {
+    //         SailNormal = -SailNormal; 
+    //         CosTheta = FMath::Abs(Alignment);
+    //     } else {
+    //         CosTheta = 0.0;
+    //     }
+    // } else {
+    //     CosTheta = Alignment;
+    // }
+
     if (Alignment < 0) {
+        // --- COLPO SUL RETRO (CASO STANDARD) ---
+        // Questo è il caso in cui la luce spinge la vela "da dietro".
+        // Invertiamo la normale perché la forza spinge "in avanti" (verso la freccia Blu)
+        SailNormal = -SailNormal; 
+        
+        // Questo lato funziona SEMPRE (sia Single che Double) perché è il lato riflettente principale
+        CosTheta = FMath::Abs(Alignment);
+    } 
+    else {
+        // --- COLPO SUL FRONTE (Lato Struttura) ---
         if (DoubleSidedSail) {
-            SailNormal = -SailNormal; 
-            CosTheta = FMath::Abs(Alignment);
+            // Se è doppia faccia, anche il fronte riflette
+            CosTheta = Alignment;
         } else {
+            // Se è singola faccia, il fronte è INERTE (non genera spinta)
             CosTheta = 0.0;
         }
-    } else {
-        CosTheta = Alignment;
     }
-    
+
     IncidenceAngle = FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(CosTheta, 0.0, 1.0)));
 }
 
@@ -347,6 +371,7 @@ void ASolarSail::UpdateSolarForce(float DeltaTime) {
     
     // Posizione del Sole in UU
     FVector3d SunPosUU = Manager->SUN_POSITION * Manager->KM_TO_UU;
+    SunDirection = (SunPosUU - SailPosition).GetSafeNormal();
 
     // Loop sulla griglia
     for (int32 i = 0; i < SafeResolution; i++) {
@@ -388,14 +413,16 @@ void ASolarSail::UpdateSolarForce(float DeltaTime) {
 
                 // Debug Verde (Luce arriva)
                 if (Manager->ShowPhotonDebug) {
-                    DrawDebugLine(GetWorld(), FVector(SamplePos), FVector(SamplePos + SunDirection * 100.0), FColor::Green, false, 0.1f);
+                    FVector LineEnd = FVector(SamplePos + SunDirection * 100.0);
+                    DrawDebugLine(GetWorld(), FVector(SamplePos), LineEnd, FColor::Green, false, 0.1f);
                 }
             } 
             else {
                 // FOTONE BLOCCATO (Ombra)
                 if (Manager->ShowPhotonDebug) {
                     // Disegna linea rossa fino all'ostacolo
-                    DrawDebugLine(GetWorld(), FVector(SamplePos), FVector(SamplePos + SunDirection * 100.0), FColor::Red, false, 0.1f);
+                    FVector LineEnd = FVector(SamplePos + SunDirection * 100.0);
+                    DrawDebugLine(GetWorld(), FVector(SamplePos), LineEnd, FColor::Red, false, 0.1f);
                 }
             }
         }
