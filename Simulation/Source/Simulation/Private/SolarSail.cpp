@@ -508,6 +508,11 @@ void ASolarSail::DebugVisuals() {
     if (Manager->ShowSolarForceDebug)        DrawDebugDirectionalArrow(GetWorld(), SailLoc, SailLoc + (FVector(SolarForceVersor) * ArrowLen), ArrowSize, FColor::Red, false, -1, 0, 5.0f);
     if (Manager->ShowGravityForceDebug)      DrawDebugDirectionalArrow(GetWorld(), SailLoc, SailLoc + (FVector(GravityForceVersor) * ArrowLen), ArrowSize, FColor::Blue, false, -1, 0, 5.0f);
     if (Manager->ShowTotalForceDebug)        DrawDebugDirectionalArrow(GetWorld(), SailLoc, SailLoc + (FVector(TotalForce.GetSafeNormal()) * ArrowLen), 200.f, FColor::Magenta, false, -1, 0, 7.0f);
+    if (Manager->ShowOrientationDebug) {
+        DrawDebugDirectionalArrow(GetWorld(), SailLoc, SailLoc + (GetActorForwardVector() * ArrowLen), ArrowSize, FColor::Blue, false, -1, 0, 5.0f);
+        DrawDebugDirectionalArrow(GetWorld(), SailLoc, SailLoc + (GetActorUpVector() * ArrowLen), ArrowSize, FColor::Green, false, -1, 0, 5.0f);
+        DrawDebugDirectionalArrow(GetWorld(), SailLoc, SailLoc + (GetActorRightVector() * ArrowLen), ArrowSize, FColor::Red, false, -1, 0, 5.0f);
+    }
     if(!Manager->ShowDebugTelemetry) {
         return;
     }
