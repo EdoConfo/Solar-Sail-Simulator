@@ -303,27 +303,35 @@ void ASolarSail::UpdateSailRotation(float DeltaTime) {
     //     CosTheta = Alignment;
     // }
 
+    // FIX VISUALE: Calcoliamo l'angolo PRIMA di decidere se azzerare la forza.
+    // Usiamo Abs() perché geometricamente 0° significa "perpendicolare", sia fronte che retro.
+    double GeometricCosTheta = FMath::Abs(Alignment);
+    IncidenceAngle = FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(GeometricCosTheta, 0.0, 1.0)));
+
     if (Alignment < 0) {
         // --- COLPO SUL RETRO (CASO STANDARD) ---
         // Questo è il caso in cui la luce spinge la vela "da dietro".
         // Invertiamo la normale perché la forza spinge "in avanti" (verso la freccia Blu)
-        SailNormal = -SailNormal; 
+        
+        /*
+        //SailNormal = -SailNormal; 
         
         // Questo lato funziona SEMPRE (sia Single che Double) perché è il lato riflettente principale
         CosTheta = FMath::Abs(Alignment);
+        */
+        CosTheta = GeometricCosTheta;
     } 
     else {
         // --- COLPO SUL FRONTE (Lato Struttura) ---
         if (DoubleSidedSail) {
             // Se è doppia faccia, anche il fronte riflette
-            CosTheta = Alignment;
+            CosTheta = GeometricCosTheta;
         } else {
             // Se è singola faccia, il fronte è INERTE (non genera spinta)
             CosTheta = 0.0;
         }
     }
 
-    IncidenceAngle = FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(CosTheta, 0.0, 1.0)));
 }
 
 void ASolarSail::UpdateSolarForce(float DeltaTime) {
@@ -438,7 +446,6 @@ void ASolarSail::UpdateSolarForce(float DeltaTime) {
         SAIL_MESH->AddForce(SolarForce);
     }
 }
-
 
 // void ASolarSail::UpdateSolarForce(float DeltaTime) {
 //     if (!Manager || !SAIL_MESH) {
