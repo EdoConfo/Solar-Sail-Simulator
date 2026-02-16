@@ -72,7 +72,7 @@ FVector3d ASimulationManager::GetEarthGravityAccelerationAt(FVector3d SailLocati
     double DistanceFromEarthM = DistanceFromEarthKm * 1000.0;
     double GravityAccelerationMagnitude = (GRAVITATIONAL_CONSTANT * EARTH_MASS) / (DistanceFromEarthM * DistanceFromEarthM);
     FVector3d DirectionToEarth = (EARTH_POSITION - (SailLocationUU * UU_TO_KM)).GetSafeNormal();
-    return DirectionToEarth * GravityAccelerationMagnitude * ForceMultiplier;
+    return DirectionToEarth * GravityAccelerationMagnitude;
 }
 
 double ASimulationManager::GetSolarPressureAt(FVector3d SailLocationUU, double SailDistanceFromSunKm) const {

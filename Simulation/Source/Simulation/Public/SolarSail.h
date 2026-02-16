@@ -95,6 +95,8 @@ private:
     FString CsvBuffer;
     float CsvWriteTimer = 0.0f;
     TArray<FVector> OrbitHistory;
+    TArray<FVector> LocalActiveRays;
+    TArray<FVector> LocalBlockedRays;
 
     void FinishInitialization();
     bool InitializeManager();
