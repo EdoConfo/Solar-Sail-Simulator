@@ -256,6 +256,7 @@ void ASolarSail::UpdateGravityForce() {
         }
     }
 }
+
 //GIUSTA
 // void ASolarSail::UpdateSailRotation(float DeltaTime) {
 //     if (!Manager || !SAIL_MESH) return;
