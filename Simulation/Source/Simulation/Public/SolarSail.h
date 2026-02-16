@@ -40,6 +40,9 @@ public:
     UPROPERTY(EditAnywhere   , Category = "Sail Parameters | Sail"                           , meta = (DisplayName = "Risoluzione della Griglia"                                                                                        , ClampMin = "1"    , ClampMax = "100"     )) int32                            GridResolution             = 10;
     UPROPERTY(EditAnywhere   , Category = "Sail Parameters | Sail"                           , meta = (DisplayName = "Vela Doppia Faccia"                                                                                                                                          )) bool                             DoubleSidedSail            = false;
     UPROPERTY(EditAnywhere   , Category = "Sail Parameters | Sail"                           , meta = (DisplayName = "Indice di Visualizzazione"                                                                                                                                   )) int32                            SailIndex                  = 0;
+    UPROPERTY(EditAnywhere   , Category = "Sail Parameters | Sail"                           , meta = (DisplayName = "Mostra Scia Orbita"                                                                                                                                          )) bool                             ShowOrbitTrail             = false;
+    UPROPERTY(EditAnywhere   , Category = "Sail Parameters | Sail"                           , meta = (DisplayName = "Lunghezza Scia (Punti)"                                                                                           , ClampMin="10"     , ClampMax="5000"      )) int32                            MaxTrailPoints             = 1000;
+    UPROPERTY(EditAnywhere   , Category = "Sail Parameters | Sail"                           , meta = (DisplayName = "Distanza Minima tra Punti (km)"                                                                                                                              )) float                            TrailPointMinDistance      = 50.0f; // Aggiunge un punto ogni 50km per non intasare la memoria
     UPROPERTY(EditAnywhere   , Category = "Sail Parameters | Orbit"                          , meta = (DisplayName = "Tipo di Orbita Iniziale"                                                                                                                                     )) EOrbitStartType                  OrbitType                  = EOrbitStartType::Geostationary;
     UPROPERTY(VisibleAnywhere, Category = "Sail Parameters | Orbit"                          , meta = (DisplayName = "Quota LEO"      , EditCondition = "OrbitType == EOrbitStartType::LEO_ISS"                     , EditConditionHides                                           )) double                           ORBIT_LEO                  = 400.0;
     UPROPERTY(VisibleAnywhere, Category = "Sail Parameters | Orbit"                          , meta = (DisplayName = "Quota GPS"      , EditCondition = "OrbitType == EOrbitStartType::MEO_GPS"                     , EditConditionHides                                           )) double                           ORBIT_GPS                  = 20200.0;
@@ -75,6 +78,7 @@ public:
     UPROPERTY(VisibleAnywhere, Category = "Sail Parameters | Live Telemetry | Gravity Values", meta = (DisplayName = "Versore della Forza di Gravità"                                                                                                                              )) FVector3d                        GravityForceVersor         = FVector3d::Zero();
     UPROPERTY(VisibleAnywhere, Category = "Sail Parameters | Live Telemetry | Ray Casting"   , meta = (DisplayName = "Fotoni Attivi"                                                                                                                                               )) int32                            ActivePhotons              = 0;
     UPROPERTY(VisibleAnywhere, Category = "Sail Parameters | Live Telemetry | Ray Casting"   , meta = (DisplayName = "Fotoni Totali"                                                                                                                                               )) int32                            TotalPhotons               = 0;
+    
 
 protected:
     virtual void BeginPlay() override;
@@ -90,6 +94,7 @@ private:
     float RaycastInterval = 0.2f;
     FString CsvBuffer;
     float CsvWriteTimer = 0.0f;
+    TArray<FVector> OrbitHistory;
 
     void FinishInitialization();
     bool InitializeManager();

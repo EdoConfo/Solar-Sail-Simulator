@@ -17,7 +17,7 @@ public:
     FVector3d GetEarthGravityAccelerationAt(FVector3d SailLocationUU, double SailDistanceFromEarthKm) const;
     double GetSolarPressureAt(FVector3d SailLocationUU, double SailDistanceFromSunKm) const;
 
-    UPROPERTY(EditAnywhere   , Category = "Simulation Parameters | Settings"        , meta = (DisplayName = "Moltiplicatore del Tempo"         , ClampMin = "0.01", ClampMax = "100000")) float                         TimeScale                  = 1.0f;
+    UPROPERTY(EditAnywhere   , Category = "Simulation Parameters | Settings"        , meta = (DisplayName = "Moltiplicatore del Tempo"         , ClampMin = "1"   , ClampMax = "100000")) int32                         TimeScale                  = 1;
     UPROPERTY(EditAnywhere   , Category = "Simulation Parameters | Settings"        , meta = (DisplayName = "Moltiplicatore della Forza"       , ClampMin = "0.01", ClampMax = "100000")) float                         ForceMultiplier            = 1.0f;
     UPROPERTY(EditAnywhere   , Category = "Simulation Parameters | Settings"        , meta = (DisplayName = "Risoluzione della Griglia"        , ClampMin = "1"   , ClampMax = "100"   )) int32                         GridResolution             = 10;
     UPROPERTY(EditAnywhere   , Category = "Simulation Parameters | Settings"        , meta = (DisplayName = "Abilita Gravità"                                                          )) bool                          EnableGravity              = true;

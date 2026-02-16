@@ -221,7 +221,9 @@ void ASolarSail::SetInitialVelocity() {
     InitialOrbitVelocityVersor = FVector3d(GetActorUpVector());
 
     InitialOrbitVelocity = InitialOrbitVelocityVersor * InitialOrbitVelocityModule;
-    SAIL_MESH->SetPhysicsLinearVelocity(FVector(InitialOrbitVelocity));
+    if(SAIL_MESH->IsSimulatingPhysics()) {
+        SAIL_MESH->SetPhysicsLinearVelocity(FVector(InitialOrbitVelocity));
+    }
     
     UE_LOG(LogTemp, Warning, TEXT("[%s] Velocità: %.3f m/s lungo asse Z (Blu)."), *SailName, InitialOrbitVelocityModule);
 }
@@ -248,8 +250,11 @@ void ASolarSail::UpdateGravityForce() {
     GravityForceModule = GravityForce.Size();
     GravityForceVersor = GravityForce.GetSafeNormal();
     //FVector UnrealForce = FVector(GravityForce * Manager->KM_TO_UU);
-    SAIL_MESH->AddForce(GravityForce);
-    UE_LOG(LogTemp, VeryVerbose, TEXT("[%s] Gravità applicata: %.2f N"), *SailName, GravityForceModule);
+    if(Manager->TimeScale <= 1.1f) {
+        if(SAIL_MESH->IsSimulatingPhysics()) {
+            SAIL_MESH->AddForce(FVector(GravityForce));
+        }
+    }
 }
 
 void ASolarSail::UpdateSailRotation(float DeltaTime) {
@@ -353,8 +358,10 @@ void ASolarSail::UpdateSolarForce(float DeltaTime) {
     RaycastTimer += DeltaTime;
     if (RaycastTimer < RaycastInterval) {
         // Applichiamo forza costante tra un ricalcolo e l'altro
-        if (!SolarForce.ContainsNaN()) {
-             SAIL_MESH->AddForce(SolarForce);
+        if (Manager->TimeScale <= 1.1f && !SolarForce.ContainsNaN()) {
+            if(SAIL_MESH->IsSimulatingPhysics()) {
+                SAIL_MESH->AddForce(FVector(SolarForce));
+            }
         }
         return;
     }
@@ -442,8 +449,10 @@ void ASolarSail::UpdateSolarForce(float DeltaTime) {
     SolarForceVersor = SolarForce.GetSafeNormal();
 
     // Applica forza accumulata
-    if (!SolarForce.ContainsNaN()) {
-        SAIL_MESH->AddForce(SolarForce);
+    if (Manager->TimeScale <= 1.1f && !SolarForce.ContainsNaN()) {
+        if(SAIL_MESH->IsSimulatingPhysics()) {
+            SAIL_MESH->AddForce(FVector(SolarForce));
+        }
     }
 }
 
@@ -532,8 +541,58 @@ void ASolarSail::DebugVisuals() {
     }
     FVector SailLoc = GetActorLocation();
     const float ArrowLen = 1000.0f;
-    const float LineThick = 2.0f;
     const float ArrowSize = 150.f;
+
+    // --- 1. GESTIONE SCIA ORBITALE (Nuova Implementazione) ---
+    if (ShowOrbitTrail) {
+        // A. REGISTRAZIONE PUNTI
+        bool bAddPoint = false;
+        if (OrbitHistory.Num() == 0) {
+            bAddPoint = true;
+        } else {
+            // Calcoliamo la distanza dall'ultimo punto salvato
+            float DistSq = FVector::DistSquared(OrbitHistory.Last(), SailLoc);
+            // Convertiamo la soglia da Km a UU
+            float ThresholdUU = TrailPointMinDistance * Manager->KM_TO_UU;
+            
+            if (DistSq > (ThresholdUU * ThresholdUU)) {
+                bAddPoint = true;
+            }
+        }
+
+        if (bAddPoint) {
+            OrbitHistory.Add(SailLoc);
+            // Rimuovi i punti vecchi se superiamo il limite (FIFO)
+            if (OrbitHistory.Num() > MaxTrailPoints) {
+                OrbitHistory.RemoveAt(0);
+            }
+        }
+
+        // B. DISEGNO SCIA
+        if (OrbitHistory.Num() > 1) {
+            for (int32 i = 0; i < OrbitHistory.Num() - 1; i++) {
+                // Sfumatura colore: Viola (vecchio) -> Ciano (nuovo)
+                float Alpha = (float)i / (float)OrbitHistory.Num();
+                FLinearColor ColorLinear = FMath::Lerp(FLinearColor(0.1f, 0.0f, 1.0f, 0.5f), FColor::Cyan, Alpha);
+                
+                DrawDebugLine(
+                    GetWorld(), 
+                    OrbitHistory[i], 
+                    OrbitHistory[i + 1], 
+                    ColorLinear.ToFColor(true), 
+                    false, -1, 0, 
+                    150.0f // Spessore linea
+                );
+            }
+            // Collega l'ultimo punto storico alla posizione attuale della nave (per evitare il gap)
+            DrawDebugLine(GetWorld(), OrbitHistory.Last(), SailLoc, FColor::Cyan, false, -1, 0, 150.0f);
+        }
+    } else {
+        // Se disabilitiamo la scia, puliamo la memoria
+        if(OrbitHistory.Num() > 0) OrbitHistory.Empty();
+    }
+
+    const float LineThick = 2.0f;
 
     if (Manager->ShowSailEarthDistanceDebug) DrawDebugLine            (GetWorld(), SailLoc, Manager->EARTH_POSITION * Manager->KM_TO_UU, FColor::Cyan, false, -1, 0, LineThick);
     if (Manager->ShowSailSunDistanceDebug)   DrawDebugLine            (GetWorld(), SailLoc, Manager->SUN_POSITION * Manager->KM_TO_UU, FColor::Yellow, false, -1, 0, LineThick);
@@ -639,41 +698,143 @@ void ASolarSail::DebugVisuals() {
     }
 }
 
+// void ASolarSail::Tick(float DeltaTime) {
+//     Super::Tick(DeltaTime);
+//     if (!IsValid(Manager) || !IsValid(SAIL_MESH) || !GEngine) {
+//         return;
+//     }
+//     this->CustomTimeDilation = Manager->TimeScale;
+//     SailPosition = FVector3d(GetActorLocation());
+//     SailDistanceFromEarth = FVector3d::Distance(GetActorLocation(), Manager->EARTH_POSITION * Manager->KM_TO_UU) * Manager->UU_TO_KM;
+//     SailDistanceFromSun = FVector3d::Distance(GetActorLocation(), Manager->SUN_POSITION * Manager->KM_TO_UU) * Manager->UU_TO_KM;
+//     OrbitRadius = SailDistanceFromEarth;
+
+//     UpdateSailRotation(DeltaTime);
+//     if(Manager->EnableGravity) {
+//         UpdateGravityForce();
+//         //AlignSailNormal();
+//     } else {
+//         GravityForce = FVector3d::Zero();
+//         GravityForceModule = 0.0;
+//         GravityForceVersor = FVector3d::Zero();
+//     }
+//     if(Manager->EnableSolarPressure) {
+//         UpdateSolarForce(DeltaTime);
+//     } else {
+//         SolarForce = FVector3d::Zero();
+//         SolarForceModule = 0.0;
+//         SolarForceVersor = FVector3d::Zero();
+//         SolarPressure = 0.0;
+//         ActivePhotons = 0;
+//     }
+//     TotalForce = GravityForce + SolarForce;
+//     FVector3d AccelMetersS2 = TotalForce / SAIL_MASS;
+//     SailAcceleration = AccelMetersS2 / 1000.0;
+
+    
+//     SailVelocity = FVector3d(SAIL_MESH->GetPhysicsLinearVelocity()) * Manager->UU_TO_KM;
+//     if(Manager->EnableCSVLogging) {
+//         AppendDataToCSV(DeltaTime);
+//     }
+//     if(Manager->ShowDebugTelemetry) {
+//         DebugVisuals();
+//     }
+// }
+
 void ASolarSail::Tick(float DeltaTime) {
     Super::Tick(DeltaTime);
+    
     if (!IsValid(Manager) || !IsValid(SAIL_MESH) || !GEngine) {
         return;
     }
-    this->CustomTimeDilation = Manager->TimeScale;
+
+    // --- 1. GESTIONE CAMBIO MODALITÀ (Fisica vs Manuale) ---
+    bool bShouldBePhysics = (Manager->TimeScale <= 1.1f);
+    bool bCurrentlyPhysics = SAIL_MESH->IsSimulatingPhysics();
+
+    if (bShouldBePhysics && !bCurrentlyPhysics) {
+        // Transizione: MANUALE -> FISICA
+        // Riattiviamo la fisica e applichiamo la velocità che avevamo calcolato a mano
+        SAIL_MESH->SetSimulatePhysics(true);
+        SAIL_MESH->SetPhysicsLinearVelocity(FVector(SailVelocity * Manager->KM_TO_UU));
+        this->CustomTimeDilation = Manager->TimeScale; // Unreal gestisce il tempo
+        UE_LOG(LogTemp, Log, TEXT("[%s] Switch to PHYSICS MODE (TimeScale <= 1.1)"), *SailName);
+    }
+    else if (!bShouldBePhysics && bCurrentlyPhysics) {
+        // Transizione: FISICA -> MANUALE
+        // Spegniamo la fisica, ma prima salviamo l'ultima velocità reale
+        SailVelocity = FVector3d(SAIL_MESH->GetPhysicsLinearVelocity()) * Manager->UU_TO_KM;
+        SAIL_MESH->SetSimulatePhysics(false);
+        this->CustomTimeDilation = 1.0f; // Importante: Resettiamo il Dilation a 1, il tempo lo moltiplichiamo noi
+        UE_LOG(LogTemp, Log, TEXT("[%s] Switch to MANUAL KINEMATIC MODE (TimeScale > 1.1)"), *SailName);
+    }
+
+    // --- 2. AGGIORNAMENTO DATI DI BASE ---
     SailPosition = FVector3d(GetActorLocation());
     SailDistanceFromEarth = FVector3d::Distance(GetActorLocation(), Manager->EARTH_POSITION * Manager->KM_TO_UU) * Manager->UU_TO_KM;
     SailDistanceFromSun = FVector3d::Distance(GetActorLocation(), Manager->SUN_POSITION * Manager->KM_TO_UU) * Manager->UU_TO_KM;
     OrbitRadius = SailDistanceFromEarth;
 
+    // --- 3. ROTAZIONE (Funziona in entrambi i modi) ---
+    // Passiamo DeltaTime reale se siamo in manuale (perché Dilation è 1), 
+    // altrimenti DeltaTime è già scalato da Unreal.
     UpdateSailRotation(DeltaTime);
+
+    // --- 4. CALCOLO FORZE ---
+    // Le funzioni Update...Force ora contengono il controllo interno:
+    // Se è PhysicsMode -> Chiamano AddForce()
+    // Se è ManualMode -> Calcolano solo i vettori e non spingono
     if(Manager->EnableGravity) {
         UpdateGravityForce();
-        //AlignSailNormal();
     } else {
         GravityForce = FVector3d::Zero();
-        GravityForceModule = 0.0;
-        GravityForceVersor = FVector3d::Zero();
     }
+
     if(Manager->EnableSolarPressure) {
         UpdateSolarForce(DeltaTime);
     } else {
         SolarForce = FVector3d::Zero();
-        SolarForceModule = 0.0;
-        SolarForceVersor = FVector3d::Zero();
-        SolarPressure = 0.0;
+        SolarPressure = 0.0; // Reset telemetria
         ActivePhotons = 0;
     }
-    TotalForce = GravityForce + SolarForce;
-    FVector3d AccelMetersS2 = TotalForce / SAIL_MASS;
-    SailAcceleration = AccelMetersS2 / 1000.0;
 
-    
-    SailVelocity = FVector3d(SAIL_MESH->GetPhysicsLinearVelocity()) * Manager->UU_TO_KM;
+    TotalForce = GravityForce + SolarForce;
+
+    // --- 5. ESECUZIONE DEL MOVIMENTO ---
+    if (bShouldBePhysics) {
+        // *** MODALITÀ FISICA ***
+        // Unreal muove l'attore. Noi aggiorniamo solo la variabile velocità per la telemetria/CSV
+        this->CustomTimeDilation = Manager->TimeScale; // Manteniamo sincronizzato
+        SailVelocity = FVector3d(SAIL_MESH->GetPhysicsLinearVelocity()) * Manager->UU_TO_KM;
+        
+        // Calcoliamo accelerazione solo per display
+        SailAcceleration = (TotalForce / SAIL_MASS) / 1000.0;
+    } 
+    else {
+        // *** MODALITÀ MANUALE (Time Warp) ***
+        // Calcoliamo noi la nuova posizione
+        
+        double SimulationDeltaTime = DeltaTime * Manager->TimeScale;
+
+        // F = m * a  ->  a = F / m
+        FVector3d AccelMetersS2 = TotalForce / SAIL_MASS;
+        FVector3d AccelKmS2 = AccelMetersS2 / 1000.0;
+
+        // Integrazione Eulero (V = V0 + a*t, P = P0 + v*t)
+        SailVelocity += AccelKmS2 * SimulationDeltaTime;
+        
+        FVector3d DisplacementKm = SailVelocity * SimulationDeltaTime;
+        FVector3d DisplacementUU = DisplacementKm * Manager->KM_TO_UU;
+
+        FVector3d NewPosition = SailPosition + DisplacementUU;
+
+        if (!NewPosition.ContainsNaN()) {
+            SetActorLocation(FVector(NewPosition));
+            SailAcceleration = AccelKmS2; // Per telemetry
+        }
+    }
+
+    // --- 6. OUTPUT DATI ---
     if(Manager->EnableCSVLogging) {
         AppendDataToCSV(DeltaTime);
     }
