@@ -1,0 +1,304 @@
+\chapter{Fondamenti Teorici}
+
+\section{La natura fisica della luce e della radiazione}
+Per comprendere e modellare matematicamente la propulsione a vela solare, è imperativo definire con esattezza la natura della radiazione che genera la spinta spaziale. Storicamente, la descrizione fisica della luce ha attraversato due paradigmi fondamentali: il modello ondulatorio classico e il modello corpuscolare quantistico. Entrambi offrono strumenti matematici essenziali per quantificare la Pressione di Radiazione Solare (SRP) all'interno di un ambiente di simulazione.
+
+\subsection{Il modello elettromagnetico classico (Equazioni di Maxwell)}
+La prima formalizzazione teorica della pressione di radiazione risale alla seconda metà del XIX secolo, grazie al monumentale lavoro di sintesi del fisico scozzese James Clerk Maxwell. Nel suo trattato sull'elettricità e il magnetismo, Maxwell dimostrò che la luce è una perturbazione ondulatoria del campo elettromagnetico che si propaga nel vuoto a una velocità finita e costante, indicata con $c$.
+
+
+
+Una delle conseguenze più profonde e controintuitive delle equazioni di Maxwell — successivamente verificata per via sperimentale da Pyotr Lebedev nel 1900 — è che le onde elettromagnetiche non trasportano esclusivamente energia termica, ma possiedono e trasferiscono una quantità di moto meccanica. 
+
+Secondo l'elettrodinamica classica, il meccanismo di interazione tra luce e materia avviene in due fasi: quando un'onda elettromagnetica incide su una superficie conduttrice (come il film metallizzato di una vela spaziale), il campo elettrico oscillante dell'onda induce un moto nelle cariche libere del materiale. Simultaneamente, il campo magnetico ortogonale dell'onda stessa interagisce con queste cariche in movimento, generando una forza di Lorentz risultante diretta perpendicolarmente alla superficie \cite{mcinnes1999solar}.
+
+Macroscopicamente, questa forza si traduce in una pressione (forza per unità di area) che l'onda esercita sul corpo. Nel caso ideale in cui l'energia elettromagnetica venga interamente assorbita dalla superficie colpita, la pressione di radiazione $P$ è direttamente proporzionale all'irraggiamento $I$ (potenza per unità di superficie) e inversamente proporzionale alla velocità della luce $c$:
+
+\begin{equation} \label{eq:maxwell_pressure}
+    P = \frac{I}{c}
+\end{equation}
+
+Nel caso in cui l'onda venga invece perfettamente riflessa da uno specchio ideale (il principio su cui si basa il \textit{solar sailing}), l'onda "rimbalza", generando una variazione di quantità di moto doppia rispetto al caso dell'assorbimento puro. L'equazione diviene quindi \cite{mcinnes1999solar}:
+
+\begin{equation} \label{eq:maxwell_pressure_reflected}
+    P = \frac{2I}{c}
+\end{equation}
+
+Sebbene il modello ondulatorio classico offra una base macroscopica elegante e matematicamente solida, per comprendere e simulare le singole collisioni a livello atomico e l'effettivo trasporto della quantità di moto nel vuoto, l'ingegneria aerospaziale fa affidamento sull'interpretazione quantistica del campo elettromagnetico introdotta agli albori del Novecento \cite{rodrigues2023review}.
+
+\subsection{Il dualismo onda-corpuscolo e l'interpretazione quantistica}
+Sebbene le equazioni di Maxwell descrivano perfettamente il comportamento macroscopico della radiazione incidente, per modellare l'interazione spaziale all'interno di un motore di simulazione è analiticamente più conveniente — e fisicamente più accurato — adottare il modello corpuscolare della luce. Agli inizi del XX secolo, l'interpretazione quantistica ha risolto alcune incongruenze del modello classico, introducendo il concetto di dualismo onda-corpuscolo.
+
+\subsubsection{I fotoni e la relazione di Planck-Einstein}
+La rivoluzione quantistica, innescata dagli studi sul corpo nero di Max Planck e formalizzata da Albert Einstein nel 1905 con la spiegazione dell'effetto fotoelettrico, stabilisce che l'energia del campo elettromagnetico non è distribuita in modo continuo, ma è quantizzata. La radiazione è composta da "pacchetti" discreti di energia, chiamati fotoni. 
+
+L'energia $E$ trasportata da un singolo fotone è direttamente proporzionale alla frequenza $\nu$ dell'onda elettromagnetica associata, secondo la celebre relazione di Planck-Einstein:
+
+\begin{equation} \label{eq:planck_einstein}
+    E = h \cdot \nu = \frac{h \cdot c}{\lambda}
+\end{equation}
+
+dove:
+\begin{itemize}
+    \item $h$ è la costante di Planck ($6.626 \times 10^{-34} \, \text{J}\cdot\text{s}$);
+    \item $c$ è la velocità della luce nel vuoto ($2.998 \times 10^8 \, \text{m/s}$);
+    \item $\lambda$ è la lunghezza d'onda della radiazione.
+\end{itemize}
+
+\subsubsection{Relatività ristretta e trasporto di quantità di moto}
+Per spiegare come una particella intrinsecamente priva di massa a riposo (il fotone) possa esercitare una forza meccanica su un oggetto massivo (la vela solare), è necessario ricorrere alla Teoria della Relatività Ristretta di Einstein. 
+
+L'equazione relativistica generale che lega l'energia totale $E$, la quantità di moto $p$ e la massa a riposo $m_0$ di una particella è:
+
+\begin{equation} \label{eq:relativity}
+    E^2 = (p \cdot c)^2 + (m_0 \cdot c^2)^2
+\end{equation}
+
+Poiché, per definizione, la massa a riposo di un fotone è nulla ($m_0 = 0$), l'equazione \ref{eq:relativity} si semplifica drasticamente, fornendo la relazione fondamentale che quantifica il momento lineare trasferito dalla luce \cite{mcinnes1999solar}:
+
+\begin{equation} \label{eq:photon_momentum}
+    p = \frac{E}{c}
+\end{equation}
+
+Questa equazione, all'apparenza innocua, è il pilastro fondante dell'intera propulsione fotonica: dimostra in modo inequivocabile che ogni singolo quanto di luce, pur non avendo massa, trasporta una quantità di moto. Quando milioni di miliardi di fotoni collidono al secondo contro la membrana di una vela spaziale, essi cedono il loro momento lineare $p$, generando un impulso e, di conseguenza, una forza netta continua \cite{rodrigues2023review}.
+
+\subsection{Dal quanto di luce alla spinta macroscopica}
+Il passaggio dalla fisica delle particelle all'ingegneria aerospaziale richiede di tradurre l'interazione del singolo fotone in una forza macroscopica sfruttabile dal velivolo. In un simulatore computazionale basato su \textit{ray casting}, l'accelerazione della vela non viene calcolata simulando l'impatto di ogni singolo fotone (il che richiederebbe una potenza di calcolo irrealizzabile), ma integrando il flusso fotonico su una determinata area \cite{ericson2004real}.
+
+Se consideriamo un fascio di luce monocromatica composto da $N$ fotoni al secondo che colpisce perpendicolarmente una superficie perfettamente assorbente, la forza totale $F$ esercitata è pari alla variazione della quantità di moto totale nel tempo (secondo la seconda legge di Newton $F = \frac{dp}{dt}$). Sostituendo la derivata con il rateo di fotoni $N$, otteniamo:
+
+\begin{equation}
+    F = N \cdot p = N \cdot \frac{E}{c} = \frac{W}{c}
+\end{equation}
+
+dove $W = N \cdot E$ rappresenta la potenza totale (in Watt) incidente sulla superficie. Questo risultato quantistico coincide perfettamente con l'equazione \ref{eq:maxwell_pressure} derivata dal modello classico di Maxwell, dimostrando la robustezza del fenomeno fisico. 
+
+Con questa equivalenza matematica dimostrata, è possibile abbandonare la scala subatomica e passare alla formulazione ingegneristica della spinta, introducendo le costanti astronomiche del Sole e i parametri geometrici della vela solare \cite{mcinnes1999solar}.
+
+\section{Meccanica della Pressione di Radiazione Solare (SRP)}
+Stabilito il fondamento quantistico per cui i fotoni trasportano una quantità di moto, è necessario traslare questo principio nell'ambito dell'astrodinamica e dell'ingegneria spaziale. Per modellare la propulsione di una vela solare all'interno di un simulatore, non è sufficiente conoscere la natura della radiazione, ma occorre quantificare il flusso energetico emesso dalla sorgente (il Sole) e come questo si propaghi e decada nel vuoto interplanetario.
+
+\subsection{Definizione di Luminosità Solare e irraggiamento isotropo}
+Il Sole è un reattore a fusione nucleare che converte costantemente massa in energia. L'energia totale irradiata dalla stella in tutte le direzioni nell'unità di tempo è definita come Luminosità Solare ($L_\odot$). Per i calcoli astrodinamici standard, il Sole viene approssimato come un emettitore isotropo puntiforme, ovvero una sorgente che irradia energia in modo uniforme in ogni direzione dello spazio tridimensionale \cite{mcinnes1999solar}.
+
+Il valore nominale della luminosità solare, derivato dalle misurazioni satellitari, è approssimativamente:
+
+\begin{equation}
+    L_\odot \approx 3.828 \times 10^{26} \, \text{W}
+\end{equation}
+
+Questa enorme potenza si distribuisce uniformemente sulla superficie di sfere concentriche aventi il Sole come centro. Man mano che la radiazione viaggia verso l'esterno del sistema solare, la medesima quantità di energia deve attraversare superfici sferiche di raggio via via maggiore, "diluendosi" nello spazio.
+
+\subsection{Il decadimento quadratico inverso rispetto alla distanza}
+L'intensità della radiazione solare, definita come flusso energetico o irraggiamento $W$ (misurato in $\text{W/m}^2$), in un dato punto dello spazio dipende unicamente dalla distanza $r$ dal centro del Sole. Poiché l'area di una sfera è pari a $A = 4\pi r^2$, l'irraggiamento segue rigorosamente la legge del decadimento quadratico inverso:
+
+\begin{equation} \label{eq:solar_flux}
+    W(r) = \frac{L_\odot}{4 \pi r^2}
+\end{equation}
+
+
+
+Per standardizzare i calcoli ingegneristici, si prende come riferimento l'irraggiamento alla distanza media tra la Terra e il Sole, nota come Unità Astronomica ($1 \, \text{AU} \approx 1.496 \times 10^{11} \, \text{m}$). Il flusso energetico misurato a $1 \, \text{AU}$ prende il nome di Costante Solare ($W_E$) \cite{mcinnes1999solar}:
+
+\begin{equation}
+    W_E = \frac{L_\odot}{4 \pi (1 \, \text{AU})^2} \approx 1368 \, \text{W/m}^2
+\end{equation}
+
+L'equazione \ref{eq:solar_flux} rivela una delle limitazioni operative più critiche per le missioni a vela solare: se la distanza dal Sole raddoppia (ad esempio spostandosi verso la fascia degli asteroidi), la potenza della radiazione, e conseguentemente la spinta, si riduce a un quarto del suo valore iniziale. Questo vincolo geometrico rende la propulsione fotonica estremamente efficiente nel sistema solare interno (verso Venere o Mercurio), ma progressivamente inefficace oltre l'orbita di Marte \cite{johnson2012status}.
+
+\subsection{Formalizzazione matematica della Pressione Solare nel vuoto}
+Integrando il concetto di flusso energetico $W(r)$ con la relazione quantistica di Maxwell-Planck per il trasporto di momento lineare delineata nella sezione precedente ($P = W/c$), possiamo ottenere l'equazione fondamentale che quantifica la Pressione di Radiazione Solare ideale in funzione della distanza $r$ \cite{mcinnes1999solar}:
+
+\begin{equation} \label{eq:srp_ideal}
+    P(r) = \frac{W(r)}{c} = \frac{L_\odot}{4 \pi r^2 c}
+\end{equation}
+
+Sostituendo i valori noti della Luminosità Solare e della velocità della luce, è possibile calcolare il valore esatto della pressione di radiazione alla distanza terrestre di $1 \, \text{AU}$:
+
+\begin{equation}
+    P_E = \frac{1368 \, \text{W/m}^2}{2.998 \times 10^8 \, \text{m/s}} \approx 4.56 \times 10^{-6} \, \text{N/m}^2
+\end{equation}
+
+Questo valore, sebbene appaia infinitesimale ($4.56 \, \mu\text{N}$ su una superficie di un metro quadrato, paragonabile al peso di un granello di sabbia sulla Terra), rappresenta l'input propulsivo ideale puro. La sua natura continua e inesauribile nel tempo è ciò che permette l'accumulo di enormi variazioni di velocità ($\Delta v$), colmando il divario prestazionale con la propulsione chimica \cite{johnson2012status}.
+
+Tuttavia, l'equazione \ref{eq:srp_ideal} descrive la pressione esercitata su una superficie di controllo perfettamente assorbente e ortogonale ai raggi solari. Nella realtà ingegneristica, l'interazione della radiazione con i materiali metallizzati della vela introduce dinamiche ottiche ben più complesse, che richiedono un'attenta modellazione vettoriale per prevedere la reale spinta risultante \cite{rodrigues2023review}.
+
+\section{Interazione tra radiazione fotonica e superfici spaziali}
+Le equazioni derivate nella sezione precedente definiscono la pressione di radiazione $P(r)$ come una grandezza scalare ideale, valida per superfici ortogonali al flusso luminoso. Tuttavia, in uno scenario operativo reale, la vela solare non è quasi mai perfettamente perpendicolare ai raggi del Sole. Per governare il veicolo e alterare i parametri orbitali, è necessario inclinare la membrana, modificando l'angolo di incidenza della luce. Questa manovra altera drasticamente sia il modulo che la direzione del vettore forza risultante \cite{mcinnes1999solar}.
+
+\subsection{Il concetto di area effettiva e la legge del coseno}
+Quando un flusso di fotoni investe una superficie piana inclinata, la quantità di radiazione intercettata non dipende dall'area fisica totale della vela ($A$), bensì dalla sua proiezione geometrica sul piano ortogonale alla direzione di propagazione della luce. 
+
+Definendo $\mathbf{u}$ come il versore che indica la direzione dei raggi solari incidenti e $\mathbf{n}$ come il versore normale alla superficie della vela (uscente dalla faccia illuminata), definiamo l'angolo di incidenza (o \textit{pitch angle}) $\alpha$ come l'angolo compreso tra $\mathbf{u}$ e $\mathbf{n}$.
+
+
+
+Secondo i principi dell'ottica geometrica, l'area effettiva ($A_{\text{eff}}$) che intercetta il flusso fotonico è governata dalla legge del coseno:
+
+\begin{equation} \label{eq:effective_area}
+    A_{\text{eff}} = A \cos(\alpha)
+\end{equation}
+
+Di conseguenza, all'aumentare dell'angolo $\alpha$, la sezione trasversale esposta al Sole diminuisce. Quando la vela è di taglio ($\alpha = 90^\circ$), l'area effettiva si annulla e la forza propulsiva decade a zero.
+
+\subsection{Modelli ottici dei materiali della vela}
+La forza esercitata sull'area effettiva non dipende solo dalla geometria, ma in modo critico dalle proprietà ottiche del materiale che compone la membrana. Il trasferimento della quantità di moto segue leggi diverse a seconda che i fotoni vengano assorbiti o riflessi. Per modellare matematicamente l'interazione, la letteratura aerospaziale definisce due casi limite ideali, seguiti da un modello realistico \cite{rodrigues2023review}.
+
+\subsubsection{Caso limite A: L'assorbitore perfetto}
+Se la vela fosse costituita da un materiale "corpo nero" ideale, assorbirebbe il 100\% dei fotoni incidenti. In questo scenario, i fotoni cedono interamente la loro quantità di moto $p = E/c$ nella stessa direzione del raggio luminoso. 
+
+La forza risultante $\mathbf{F}_{\text{assorbita}}$ ha modulo proporzionale all'area effettiva ed è diretta parallelamente al versore della luce solare $\mathbf{u}$ \cite{mcinnes1999solar}:
+
+\begin{equation}
+    \mathbf{F}_{\text{assorbita}} = P(r) \cdot A \cos(\alpha) \cdot \mathbf{u}
+\end{equation}
+
+Questo modello è puramente teorico, poiché genererebbe una spinta unicamente radiale (allontanando il veicolo dal Sole) senza permettere il controllo vettoriale della traiettoria.
+
+\subsubsection{Caso limite B: Il riflettore speculare perfetto}
+Il design standard di una vela solare prevede l'utilizzo di film polimerici (come il Kapton) rivestiti da uno strato nanometrico di alluminio, al fine di massimizzare la riflessione. Nel caso ideale di un riflettore speculare perfetto, i fotoni "rimbalzano" elasticamente sulla superficie.
+
+Secondo le leggi della riflessione ottica, l'angolo di riflessione è pari all'angolo di incidenza $\alpha$. Il trasferimento di quantità di moto in direzione parallela alla superficie si annulla (le componenti tangenziali in ingresso e in uscita sono uguali e contrarie), mentre la variazione di quantità di moto lungo l'asse normale ($\mathbf{n}$) raddoppia. 
+
+In questo caso, la forza di spinta $\mathbf{F}_{\text{riflessa}}$ è rigorosamente perpendicolare alla superficie della vela e il suo modulo è caratterizzato da una dipendenza dal \textit{quadrato} del coseno \cite{mcinnes1999solar}:
+
+\begin{equation} \label{eq:perfect_reflection}
+    \mathbf{F}_{\text{riflessa}} = 2 P(r) \cdot A \cos^2(\alpha) \cdot \mathbf{n}
+\end{equation}
+
+Il termine $\cos^2(\alpha)$ è cruciale in astrodinamica: un coseno deriva dalla riduzione dell'area effettiva (Equazione \ref{eq:effective_area}), mentre il secondo coseno deriva dalla proiezione geometrica della variazione di quantità di moto lungo l'asse normale $\mathbf{n}$.
+
+\subsubsection{Modelli intermedi: Materiali realistici e coefficienti ibridi}
+Nella realtà ingegneristica, nessun materiale è un riflettore perfetto. La membrana presenterà micro-rugosità, imperfezioni strutturali e degrado indotto dall'ambiente spaziale (radiazioni ultraviolette e micrometeoriti). Come modellizzato negli studi di Simo e McInnes \cite{simo2016realistic}, un modello ottico realistico deve includere specifici coefficienti adimensionali:
+
+\begin{itemize}
+    \item \textbf{Riflettività speculare ($\rho_s$):} Frazione di fotoni riflessa in modo perfettamente speculare.
+    \item \textbf{Riflettività diffusa ($\rho_d$):} Frazione di fotoni diffusa in direzioni casuali a causa della rugosità della superficie (fenomeno descritto dalla legge di Lambert).
+    \item \textbf{Assorbività ($\alpha_a$):} Frazione di fotoni che viene assorbita dal materiale, convertendosi in calore irradiato in modo asimmetrico (spinta termica secondaria).
+\end{itemize}
+
+L'introduzione di questi coefficienti dimostra che la forza risultante non sarà mai perfettamente allineata con il versore normale $\mathbf{n}$, ma subirà una deviazione che il sistema di controllo di assetto dovrà compensare \cite{simo2016realistic}.
+
+\subsection{Scomposizione vettoriale della forza risultante}
+Ai fini dell'integrazione numerica all'interno del motore di simulazione, l'approccio più rigoroso prevede la scomposizione della forza generata dalla pressione di radiazione in due componenti mutuamente ortogonali rispetto al piano orbitale locale: una forza normale ($\mathbf{F}_n$) e una forza tangenziale ($\mathbf{F}_t$).
+
+
+
+\begin{equation}
+    \mathbf{F}_{\text{totale}} = \mathbf{F}_n + \mathbf{F}_t
+\end{equation}
+
+La scomposizione vettoriale è il cardine della manovrabilità del \textit{solar sailing}:
+\begin{itemize}
+    \item La \textbf{componente normale} ($\mathbf{F}_n$), diretta verso l'esterno dell'orbita, si oppone parzialmente alla gravità del corpo attrattore, alleggerendo di fatto il veicolo.
+    \item La \textbf{componente tangenziale} ($\mathbf{F}_t$), parallela alla direzione del moto, è quella che compie il lavoro orbitale. Essa accelera o decelera il veicolo lungo la sua traiettoria, incrementando o riducendo l'energia orbitale specifica e permettendo le transizioni tra diverse orbite kepleriane \cite{rodrigues2023review}.
+\end{itemize}
+
+\section{Fondamenti di Dinamica Orbitale e Gravitazione}
+All'interno di un ambiente di simulazione astrodinamica, l'accuratezza del modello propulsivo (la spinta fotonica) risulta inutile se non è controbilanciata da un modello gravitazionale altrettanto rigoroso. Il moto di un veicolo spaziale, sia esso convenzionale o a vela solare, è dominato principalmente dall'attrazione del corpo celeste attorno al quale orbita. La traiettoria è determinata dall'integrazione numerica continua dell'accelerazione netta, data dalla somma vettoriale della perturbazione propulsiva e dell'accelerazione di gravità \cite{rodrigues2023review}.
+
+\subsection{La legge di gravitazione universale di Newton}
+La dinamica orbitale classica si fonda sulla legge di gravitazione universale formulata da Isaac Newton nel 1687. Essa postula che due corpi dotati di massa si attraggono con una forza diretta lungo la retta che congiunge i loro centri di massa. Il modulo di questa forza è direttamente proporzionale al prodotto delle masse e inversamente proporzionale al quadrato della loro distanza.
+
+\subsubsection{Costante gravitazionale e massa della Terra}
+Esprimendo la legge in forma vettoriale per un veicolo spaziale di massa $m$ in orbita attorno alla Terra di massa $M_\oplus$, la forza gravitazionale $\mathbf{F}_g$ è definita come:
+
+$$ \mathbf{F}_g = -G \frac{M_\oplus m}{r^2} \mathbf{\hat{r}} $$
+
+dove:
+\begin{itemize}
+    \item $G$ è la costante di gravitazione universale, pari a $6.67430 \times 10^{-11} \, \text{N}\cdot\text{m}^2/\text{kg}^2$;
+    \item $M_\oplus$ è la massa della Terra, approssimabile a $5.972 \times 10^{24} \, \text{kg}$;
+    \item $r$ è la distanza scalare tra il centro di massa della Terra e il veicolo;
+    \item $\mathbf{\hat{r}}$ è il versore radiale uscente dal centro della Terra verso il veicolo (il segno meno indica che la forza è attrattiva, ovvero diretta verso il centro).
+\end{itemize}
+
+Per ridurre gli errori di approssimazione in virgola mobile durante i calcoli computazionali, in astrodinamica si utilizza abitualmente il parametro gravitazionale standard planetario $\mu = G \cdot M_\oplus$, che per la Terra vale circa $3.986 \times 10^{14} \, \text{m}^3/\text{s}^2$ \cite{rodrigues2023review}.
+
+\subsubsection{Calcolo vettoriale dell'accelerazione gravitazionale locale}
+Ai fini dell'implementazione algoritmica nel motore fisico, è più conveniente lavorare in termini di accelerazione piuttosto che di forza. Applicando il secondo principio della dinamica ($\mathbf{F} = m\mathbf{a}$), si nota come la massa $m$ del veicolo spaziale si elida, dimostrando che l'accelerazione gravitazionale $\mathbf{a}_g$ è indipendente dalla stazza del satellite:
+
+$$ \mathbf{a}_g = -\frac{\mu}{r^3} \mathbf{r} $$
+
+Questa formulazione (dove $\mathbf{r}$ è il raggio vettore posizione spaziale, $\mathbf{r} = r \mathbf{\hat{r}}$) è esattamente l'equazione differenziale che il simulatore dovrà integrare numericamente ad ogni ciclo di clock per aggiornare il vettore velocità dell'attore \cite{ericson2004real}.
+
+\subsection{Dinamica del moto circolare uniforme applicata alle orbite spaziali}
+Sebbene le orbite reali siano descritte da sezioni coniche (generalmente ellissi), per l'inizializzazione degli scenari di simulazione è fondamentale definire le condizioni ideali di un'orbita circolare, che rappresenta la traiettoria con eccentricità nulla ($e = 0$).
+
+\subsubsection{Equilibrio tra forza centripeta e forza gravitazionale}
+Affinché un satellite mantenga un'orbita circolare stabile a una distanza $r$ dal centro della Terra, la forza gravitazionale attrattiva deve agire perfettamente come forza centripeta, curvando costantemente la traiettoria del veicolo senza variarne il modulo della velocità.
+
+[Image of centripetal and gravitational force equilibrium in a circular orbit]
+
+Uguagliando i moduli della forza gravitazionale e della forza centripeta ($F_c = m \frac{v^2}{r}$), otteniamo la condizione di equilibrio:
+
+$$ G \frac{M_\oplus m}{r^2} = m \frac{v^2}{r} $$
+
+\subsubsection{Derivazione della velocità orbitale in funzione della quota}
+Dall'equazione di equilibrio precedente, isolando la velocità $v$, si ricava la velocità orbitale tangenziale necessaria per il sostentamento orbitale circolare:
+
+$$ v_{circ} = \sqrt{\frac{\mu}{r}} = \sqrt{\frac{\mu}{R_\oplus + h}} $$
+
+dove $R_\oplus$ è il raggio medio terrestre ($6371 \, \text{km}$) e $h$ è l'altitudine (o quota) del veicolo rispetto alla superficie. Questa equazione è di capitale importanza informatica: quando si avvia il simulatore, il codice dovrà calcolare istantaneamente $v_{circ}$ in base all'altitudine scelta dall'utente per "lanciare" la vela alla giusta velocità iniziale, impedendole di precipitare o di sfuggire all'attrazione terrestre \cite{mcinnes1999solar}.
+
+\subsection{Classificazione dei regimi orbitali terrestri}
+Le perturbazioni ambientali, inclusa la Pressione di Radiazione Solare, variano enormemente a seconda della distanza dalla Terra. È pertanto prassi classificare lo spazio circumterrestre in regimi orbitali, ognuno con sfide ingegneristiche distinte.
+
+\subsubsection{Orbita Bassa Terrestre (LEO)}
+La LEO (\textit{Low Earth Orbit}) si estende da un'altitudine di circa $160 \, \text{km}$ fino a $2000 \, \text{km}$. In questa fascia, l'accelerazione gravitazionale è fortissima e le velocità orbitali richieste sono elevate ($\approx 7.8 \, \text{km/s}$). La sfida principale per le vele solari in LEO è la resistenza aerodinamica residua dell'alta atmosfera terrestre (esosfera), che in orbite molto basse può superare in intensità la spinta della radiazione solare. Nonostante ciò, la missione LightSail 2 ha dimostrato la fattibilità del controllo orbitale fotonico ad un'altitudine di circa $720 \, \text{km}$ \cite{spencer2023lightsail2}.
+
+\subsubsection{Orbita Media Terrestre (MEO) e costellazioni GPS}
+La MEO (\textit{Medium Earth Orbit}) copre la vasta regione tra i $2000 \, \text{km}$ e l'orbita geostazionaria. È popolata principalmente dalle costellazioni di satelliti per la navigazione globale (come GPS e Galileo) che orbitano a circa $20.000 \, \text{km}$. In questo regime, l'attrito atmosferico diventa trascurabile e la spinta fotonica inizia ad emergere come forza perturbativa o propulsiva primaria.
+
+\subsubsection{Orbita Geostazionaria (GEO)}
+A un'altitudine esatta di $35.786 \, \text{km}$ sull'equatore si trova la GEO (\textit{Geostationary Orbit}). Qui, il periodo orbitale del satellite coincide perfettamente con il periodo di rotazione terrestre ($24$ ore siderali). In questo regime di quiete gravitazionale relativa, la Pressione di Radiazione Solare è la principale causa di perturbazione dell'orbita, costringendo i satelliti tradizionali a consumare carburante per il mantenimento della posizione (\textit{station-keeping}) \cite{rodrigues2023review}.
+
+\subsubsection{Orbite in spazio profondo e distanza lunare}
+Oltre l'orbita GEO, la gravità terrestre sfuma, aprendo la strada verso la sfera di influenza lunare e l'ambiente interplanetario. È in questi regimi che la vela solare esprime il suo massimo potenziale propulsivo. Non essendo più "ingabbiate" in orbite strette ad alta velocità, le vele possono utilizzare la costante spinta solare per navigare verso i punti di Lagrange o intraprendere manovre di evasione dal sistema Terra-Luna, come previsto dalle moderne architetture di missione per l'esplorazione eliofisica \cite{mcconnell2023solarcruiser}.
+
+\section{Unreal Engine come framework per la Simulazione Scientifica}
+Per colmare il divario tra la complessa formulazione matematica della dinamica orbitale e la necessità di una validazione visiva interattiva, il presente lavoro di tesi adotta Unreal Engine (UE) come ambiente di sviluppo integrato. Sebbene storicamente associato all'industria dell'intrattenimento digitale, l'infrastruttura di un motore grafico moderno possiede tutte le caratteristiche architetturali richieste per l'ingegneria basata su modelli (MBSE) applicata all'aerospazio.
+
+\subsection{I videogiochi al servizio dell'astrofisica}
+L'impiego di tecnologie videoludiche nella ricerca scientifica (\textit{Serious Gaming} e simulazione applicata) è in rapida espansione. Strumenti matematici tradizionali come MATLAB o Simulink eccellono nell'integrazione numerica dei sistemi dinamici, ma risultano spesso limitanti quando è necessario analizzare la consapevolezza spaziale tridimensionale o l'interazione geometrica complessa (come l'auto-ombreggiamento di una vela solare).
+
+Unreal Engine offre un core C++ compilato nativamente e ottimizzato per l'elaborazione vettoriale massiva. Questa potenza computazionale permette di eseguire algoritmi di intersezione spaziale (\textit{ray casting}) e di risolvere le equazioni differenziali del moto in tempo reale, sfruttando l'accelerazione hardware della GPU per il rendering e le istruzioni vettoriali della CPU per la cinematica. L'astrofisica virtuale beneficia così di un \textit{feedback loop} immediato: l'ingegnere può alterare i parametri della massa o l'orientamento della vela e osservare istantaneamente le perturbazioni orbitali risultanti.
+
+\subsection{L'architettura software del motore}
+Per comprendere l'implementazione del simulatore discussa nei capitoli successivi, è necessario introdurre i fondamenti architetturali del framework di Epic Games, basato su un rigoroso paradigma di Programmazione Orientata agli Oggetti (OOP).
+
+\subsubsection{Il paradigma ad Attori e i Componenti}
+Il motore utilizza una gerarchia compositiva anziché unicamente basata sull'ereditarietà profonda. L'entità base di qualsiasi simulazione in Unreal Engine è l'\lstinline|AActor|. Un Attore è un oggetto astratto che può essere istanziato (\textit{spawnato}) nel mondo tridimensionale, ma che di per sé è privo di forma o comportamento fisico \cite{ericson2004real}.
+
+[Image of Unreal Engine Actor and Component hierarchy architecture]
+
+Per conferire proprietà fisiche e visive, Unreal utilizza l'architettura a Componenti (\lstinline|UActorComponent|). Ad esempio, la vela solare nel simulatore è un Attore personalizzato che "possiede" un componente \lstinline|UStaticMeshComponent| (per la rappresentazione geometrica e le collisioni fotoniche) e un componente direzionale per calcolare i vettori normali. Questo approccio modulare permette di separare la logica matematica dell'integrazione orbitale dalla rappresentazione grafica dell'oggetto.
+
+\subsubsection{Il ciclo vitale della simulazione: BeginPlay e Tick}
+Il tempo all'interno del motore grafico è discreto e gestito da un \textit{game loop} continuo. Il ciclo vitale di ogni Attore si articola su due metodi virtuali fondamentali che governano la simulazione numerica:
+\begin{itemize}
+    \item \lstinline|BeginPlay()|: Viene invocato una sola volta al momento dell'inizializzazione. In ambito astrodinamico, questo metodo è deputato all'allocazione delle risorse, alla definizione delle masse a secco e al calcolo della velocità orbitale iniziale $v_{circ}$ necessaria per stabilizzare la traiettoria prima che le forze perturbatrici intervengano.
+    \item \lstinline|Tick(float DeltaTime)|: È il cuore pulsante dell'integrazione numerica. Questa funzione viene chiamata ad ogni singolo frame renderizzato. Il parametro \lstinline|DeltaTime| ($\Delta t$) rappresenta l'intervallo temporale in secondi trascorso dal frame precedente. All'interno del \lstinline|Tick|, il simulatore calcola i vettori di gravità e di spinta fotonica, integra l'accelerazione per ottenere la velocità e aggiorna la posizione spaziale dell'Attore moltiplicando le grandezze per $\Delta t$.
+\end{itemize}
+
+\subsection{Le sfide numeriche della vastità spaziale}
+Modellare l'universo all'interno di un calcolatore introduce un ostacolo computazionale severo: la rappresentazione finita dei numeri reali in un ambiente dalle scale infinitamente grandi.
+
+\subsubsection{Il limite della virgola mobile in ambienti astronomici}
+I calcolatori elaborano i numeri decimali seguendo lo standard IEEE 754 per l'aritmetica in virgola mobile (\textit{floating-point}). Tradizionalmente, i motori grafici hanno sempre utilizzato numeri a 32 bit (\lstinline|float|) per garantire prestazioni ottimali in tempo reale. 
+
+Un numero a 32 bit dedica 23 bit alla mantissa, garantendo circa 7 cifre decimali significative di precisione. Questo significa che, allontanandosi dall'origine del sistema di coordinate $(0,0,0)$, la distanza tra due valori rappresentabili consecutivi aumenta. In una simulazione planetaria, a una distanza di appena $10.000 \, \text{km}$ (tipica di un'orbita MEO), la precisione di un \lstinline|float| a 32 bit degrada al punto da introdurre errori spaziali di svariati centimetri, causando il fenomeno del \textit{jittering} (tremolio visivo e fisico) e il collasso dell'integrazione orbitale.
+
+[Image of IEEE 754 floating point precision degradation over distance in 3D space]
+
+\subsubsection{Il sistema Large World Coordinates (LWC)}
+Per superare questa barriera, la quinta iterazione del motore (Unreal Engine 5) ha introdotto il sistema LWC (\textit{Large World Coordinates}). Questa architettura ha riscritto il core del motore, sostituendo i tipi di base vettoriali (da \lstinline|FVector| basato su \lstinline|float| a \lstinline|FVector3d| basato su \lstinline|double|). 
+
+Utilizzando la precisione doppia a 64 bit (52 bit di mantissa), il sistema garantisce circa 15-17 cifre decimali significative. Questo aggiornamento ingegneristico permette di simulare veicoli spaziali a distanze interplanetarie mantenendo una precisione sub-millimetrica, un requisito insindacabile per il calcolo delle minuscole perturbazioni indotte dalla pressione di radiazione solare.
+
+\subsubsection{Strategie di Unit Scaling: conversioni spaziali}
+Nonostante l'adozione dei 64 bit, simulare le scale astronomiche in rapporto 1:1 rimane problematico per i sistemi di rendering e di gestione delle telecamere. Per convenzione interna, in Unreal Engine l'unità di misura base (Unreal Unit, uu) equivale a $1 \, \text{cm}$. 
+
+Rappresentare un'Unità Astronomica (la distanza Terra-Sole) equivarrebbe a un raggio vettore di $1.496 \times 10^{13} \, \text{uu}$. Per gestire coordinate di tale magnitudo senza incorrere in \textit{overflow} visivi o compenetrazioni nel piano di clipping (\textit{Z-buffer}), è imperativo adottare rigorose strategie di \textit{Unit Scaling} all'interno del codice C++. 
+
+Il \textit{Simulation Manager} del progetto deve quindi fungere da traduttore: mantenere l'accuratezza del Sistema Internazionale (metri e chilogrammi) per i calcoli fisici di pura astrodinamica nel back-end, applicando contemporaneamente un fattore di scala visivo (es. $1 \, \text{uu} = 1 \, \text{km}$) esclusivamente per la rappresentazione geometrica a schermo nel \textit{front-end} dell'editor.

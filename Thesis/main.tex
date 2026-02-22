@@ -1,56 +1,51 @@
-\documentclass[a4paper,12pt]{report} 
+% \documentclass[a4paper,12pt]{report} 
+\documentclass[12pt, a4paper, twoside, openright]{book}
 
-% --- 1. CONFIGURAZIONE ---
-\input{config/packages}
-\input{config/styles}
+% --- 1. CONFIGURAZIONI MODULARI ---
+\input{Config/packages}
+\input{Config/styles.tex}
+\input{Config/code_style}
+% \input{Config/custom_commands}
 
 \begin{document}
 
 % --- 2. FRONTMATTER ---
-\input{frontmatter/titlepage}
+\frontmatter
+\input{Structure/titlepage}
 
 % Pagina bianca di rispetto
 \thispagestyle{empty} \pagenumbering{gobble} \null \clearpage 
 \pagenumbering{gobble} \cleardoublepage \thispagestyle{empty}
 
-\input{frontmatter/dedication}
+\input{Structure/dedication}
 
-%Sommario e Ringraziamenti (opzionali per ora)
-\input{frontmatter/abstract}
-\input{frontmatter/acknowledgments}
+\input{Structure/abstract}
+\input{Structure/acknowledgments}
 
 \tableofcontents
-\clearpage
-\pagenumbering{arabic}
+% \listoffigures
+% \listoftables
+\clearpage¯
 
-% --- 3. CAPITOLI ---
-\chapter*{Introduzione}
-\addcontentsline{toc}{chapter}{Introduzione}
-\input{chapters/01_intro}
+% --- 3. MAINMATTER (Capitoli) ---
+\mainmatter
+\include{Chapters/01_Introduction}
+\include{Chapters/02_Theoretical_Foundations}
+\include{Chapters/03_Software_Architecture}
+\include{Chapters/04_Physical_Implementation}
+\include{Chapters/05_Discrete_Dynamics}
+\include{Chapters/06_Telemetry_Data}
+\include{Chapters/07_Results}
+\include{Chapters/08_Conclusions}
 
-\chapter{Stato dell'arte}
-\input{chapters/02_stato_arte}
+% --- 4. APPENDICI (Il tuo manuale utente) ---
+\appendix % Questo comando trasforma i capitoli successivi in Appendice A, B, ecc.
+\include{Appendices/A_User_Manual}
 
-\chapter{Architettura del Simulatore}
-\input{chapters/03_architettura}
-
-\chapter{Implementazione del Ray Tracing}
-\input{chapters/04_implementazione}
-
-\chapter{Risultati e Validazione}
-\input{chapters/05_risultati}
-
-\chapter{Conclusioni e Sviluppi Futuri}
-\input{chapters/06_conclusioni}
-
-% --- 4. APPENDICI ---
-\appendix
-\input{appendices/A_source_code}
-\input{appendices/B_manuale_uso}
-
-% --- 5. BIBLIOGRAFIA ---
-\addcontentsline{toc}{chapter}{Bibliografia}
-\bibliographystyle{unsrt} 
-\bibliography{thesis}
+% --- 5. BACKMATTER ---
+\backmatter
+% \addcontentsline{toc}{chapter}{Bibliografia}
+\bibliographystyle{ieeetr}
+\bibliography{references}
 
 \end{document}

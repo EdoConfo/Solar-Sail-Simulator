@@ -1,0 +1,221 @@
+\chapter{Introduzione}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Il problema della propulsione spaziale}
+
+\subsection{I limiti della propulsione chimica}
+
+Fin dai primi razzi suborbitali fino alle moderne e attuali missioni interplanetarie, l'intera storia dell'esplorazione spaziale si è sempre basata sull'utilizzo della propulsione chimica. Questo insieme di propulsori opera secondo il principio di conservazione della quantità di moto, ovvero sfrutta la terza legge della dinamica di Newton. Essa afferma che per generare una spinta in una determinata direzione, il veicolo deve accelerare ed espellere una determinata quantità di massa (il propellente) nella direzione opposta \cite{rodrigues2023review}. 
+
+Seppur questa sia l'unica strategia con la quale si riesca a fornire una spinta sufficiente per vincere la forza di gravità terrestre durante le fasi di lancio, esso si rivela essere problematico per le missioni nello spazio profondo. Il paradosso alla base della propulsione classica è che per trasportare il propellente necessario a far accelerare il veicolo, è richiesto ulteriore propellente per far accelerare il propellente stesso, causando un circolo vizioso che limita drasticamente le capacità potenziali di una missione \cite{mcinnes1999solar}.
+
+\subsubsection{L'equazione del razzo di Tsiolkovsky}
+
+Ciò che lega queste variabili relative alla propulsione è una famosa equazione matematica, chiamata "equazione del razzo" o "equazione di Tsiolkovsky". Tale equazione, formulata alla fine del XIX secolo dal fisico russo Konstantin Tsiolkovsky, indica come la massima variazione di velocità $\Delta v$ che è possibile ottenere da un veicolo spaziale, semplicemente chiamato razzo, sia legata alla sua massa iniziale $m_0$ (comprendente il propellente) e alla sua massa finale $m_f$ (senza propellente), nonché all'efficienza del motore espressa dall'impulso specifico $I_{sp}$ \cite{mcinnes1999solar}.
+
+\begin{equation} \label{eq:tsiolkovsky}
+    \Delta v = I_{sp} \cdot g_0 \cdot \ln\left(\frac{m_0}{m_f}\right)
+\end{equation}
+
+dove i parametri fondamentali del sistema propulsivo sono così definiti:
+\begin{itemize}
+    \item $I_{sp}$ è l'impulso specifico del propulsore, ovvero l'efficienza con cui il motore converte la massa del propellente in spinta ed è misurato in secondi.
+    \item $g_0$ è l'accelerazione di gravità standard al livello del mare ($9.80665 \, \text{m/s}^2$).
+    \item $m_0$ è la massa iniziale del veicolo spaziale, che include la struttura, il carico utile scientifico e l'intero carico di propellente al momento dell'accensione.
+    \item $m_f$ è la massa finale, ovvero la massa del veicolo una volta esaurito tutto il propellente.
+\end{itemize}
+
+L'equazione \ref{eq:tsiolkovsky} mostra come la massima variazione di velocità sia direttamente proporzionale all'impulso specifico, ma cresca solo in modo logaritmico rispetto al rapporto tra massa iniziale e massa finale. 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\subsubsection{Il vincolo termodinamico e la tirannia della massa}
+Invertendo la formula di Tsiolkovsky, è possibile esprimere il rapporto tra la massa iniziale e la massa finale in funzione della variazione di velocità desiderata e dell'impulso specifico del propulsore:
+
+\begin{equation}
+    \frac{m_0}{m_f} = e^{\frac{\Delta v}{I_{sp} \cdot g_0}}
+\end{equation}
+
+Da questa formula si intuisce che non è possibile aumentare semplicemente la massa iniziale per ottenere più $\Delta v$. Per missioni che richiedono grandi variazioni di velocità, come quelle  interplanetarie, il rapporto $m_0/m_f$ deve essere molto elevato. Questo si traduce nel fatto che la maggior parte della massa del veicolo al lancio deve essere riservata al propellente, lasciando solo una piccola frazione per la struttura del veicolo e per l'attrezzatura scientifica \cite{johnson2012status}.
+
+Il vero limite fisico della propulsione chimica risiede nel termine $I_{sp}$, che è direttamente legato alla velocità di scarico dei gas di combustione $v_e$ tramite la relazione
+
+\begin{equation}
+    I_{sp} = \frac{v_e}{g_0}.
+\end{equation}
+
+La velocità di scarico, a sua volta, è determinata dall'energia specifica che può essere liberata dalle reazioni chimiche e dalla massa molare dei prodotti di combustione: reazioni più energetiche e prodotti più leggeri consentono $v_e$ più elevata. Esiste però un tetto termodinamico insuperabile alla quantità di energia che una reazione chimica può liberare per unità di massa, fissando così un limite pratico a $v_e$ e quindi a $I_{sp}$.
+
+In contrapposizione, la propulsione che non richiede l'espulsione di massa di reazione (es. vela solare o propulsione fotonica) non è vincolata dal bilancio energetico delle reazioni chimiche: una vela solare preleva quantità di moto dal flusso di fotoni esterni, e una sorgente fotonica ideale ha un'efficace "velocità di scarico" dell'ordine della velocità della luce $c$, corrispondente a un $I_{sp}$ teorico enormemente superiore, rendendo evidente perché le architetture senza propellente siano considerate la via per ottenere $\Delta v$ molto elevati evitando il vincolo imposto dai propellenti chimici.
+
+Con un tetto prestazionale così rigido, missioni interplanetarie complesse o missioni che richiedono orbite più complesse di quelle kepleriane diventano impossibili con la propulsione classica \cite{mcconnell2023solarcruiser}. Per raggiungere $\Delta v$ degni di nota, è necessario trasportare enormi quantità di propellente, che a sua volta richiede strutture più robuste e più costose, aumentando esponenzialmente i costi di lancio e limitando la fattibilità di missioni ambiziose \cite{johnson2012status}.
+
+Tuttavia, una volta che il propellente si è esaurito, il veicolo perde totalmente la capacità di manovrare, diventando un oggetto balistico controllato esclusivamente dalle leggi della meccanica orbitale. L'esigenza di liberarsi da questa catena logistica e di abilitare nuove classi di missioni nello spazio profondo ha spinto la ricerca verso l'adozione di propulsori \textit{propellantless}, dove la fonte di energia per la spinta non risiede nel veicolo stesso, ma viene attinta direttamente dall'ambiente spaziale \cite{johnson2012status}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Il principio della propulsione a vela solare}
+
+Nasce quindi l'esigenza di svincolarsi dalle limitazioni dalla propulsione chimica per favorire lo sviluppo di tecnologie propulsive alternative che possano fornire una spinta continua al veicolo senza richiedere il trasporto di una grande massa di propellente. Tra varie soluzioni proposte nel tempo, la propulsione a vela solare è senza dubbio una delle più promettenti e affascinanti, ma che richiede un cambio radicale nello sviluppo di missioni spaziali.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Definizione concettuale di vela solare}
+
+Una vela solare è un dispositivo di propulsione spaziale che non utilizza alcun tipo di propellente, ma sfrutta la pressione di radiazione solare (SRP, \textit{Solar Radiation Pressure}) per generare spinta.
+
+La caratteristica distintiva di questo sistema è che la forza propulsiva non deriva da una reazione chimica interna, ma dall'interazione dinamica tra i fotoni emessi dal Sole e una superficie riflettente estremamente leggera e sottile, chiamata appunto "vela".
+Difatti la spinta solare si serve dell'ambiente spaziale come fonte di energia, prelevando quantità di moto direttamente dal flusso di fotoni che colpiscono la vela.
+
+Tale fenomeno fu predetto teoricamente per la prima volta da James Clerk Maxwell nella seconda metà del 1800, attraverso le sue equazioni dell'elettromagnetismo che dimostrano come i campi elettromagnetici trasportino non solo energia ma anche quantità di moto, esercitando così una forza su superfici riflettenti \cite{rodrigues2023review}\cite{johnson2012status}. 
+
+Sebbene i fotoni siano particelle prive di massa, essi possiedono una quantità di moto $p$ direttamente proporzionale alla loro energia ed inversamente proporzionale alla velocità della luce, definita dalla relazione $p = E/c$. Quando un flusso di fotoni colpisce la superficie riflettiva della vela, si genera una variazione della quantità di moto che, per il principio di conservazione, imprime una forza sulla superficie della vela \cite{mcinnes1999solar}. 
+
+Affinché questa forza possa essere sfruttata per la propulsione, è necessario che la vela sia progettata con materiali particolari in grado di riflettere larga parte dei fotoni incidenti e con una geometria che massimizzi l'area esposta alla luce e alla conseguente pressione solare. 
+La vela è infatti costituita da una membrana incredibilmente sottile e leggera, spesso realizzata in materiali polimerici come il Mylar o il Kapton. Tali materiali sono appositamente scelti non solo per la loro leggerezza, ma anche per la loro capacità riflettente: requisito fondamentale per massimizzare la spinta generata dai fotoni solari \cite{johnson2012status}.
+
+Dal punto di vista strutturale, un veicolo a propulsione fotonica si compone tipicamente di tre elementi:
+\begin{itemize}
+    \item Il \textit{payload} centrale, che include i sistemi di comunicazione e la strumentazione scientifica.
+    \item Il sistema di dispiegamento, composto da bracci telescopici, necessario per estendere la membrana della vela una volta raggiunta l'orbita desiderata.
+    \item La membrana riflettente vera e propria, con spessori nell'ordine dei micrometri \cite{johnson2012status}.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Vantaggi e svantaggi della spinta fotonica}
+
+Sebbene la propulsione solare sia, soprattutto negli ultimi anni, oggetto di grande interesse da parte di agenzie spaziali proprio per il suo potenziale, è importante sottolineare come l'adozione di questa tecnologia comporti sia grandi vantaggi sia sfide e svantaggi significativi, che devono essere attentamente valutati nella fase di progettazione di una missione \cite{rodrigues2023review}.
+
+Il vantaggio principale e ineguagliabile della vela solare risiede nell'impulso specifico $I_{sp}$ teoricamente infinito. Non espellendo alcun propellente, infatti, il veicolo è limitato unicamente dalla degradazione dei suoi materiali nel tempo e non dalla quantità di propellente nei suoi serbatoi. Questa caratteristica si traduce in una spinta continua che, accumulata su mesi o anni di missione, permette di raggiungere $\Delta v$ totali sbalorditivi potenzialmente infiniti, inarrivabili per qualsiasi propulsore chimico \cite{mcinnes1999solar}. Inoltre, l'assenza di propellente riduce drasticamente la massa al lancio, abbattendo i costi e permettendo di ospitare un carico utile maggiore \cite{johnson2012status}.
+
+Un ulteriore, fondamentale beneficio è la capacità di gestire orbite non-kepleriane. Facendo ruotare la vela in funzione dei raggi solari, è infatti possibile far deviare il moto del veicolo dalla classica orbita kepleriana aggiungendo una grande mobilità non presente nei veicoli a propulsione tradizionale \cite{mcconnell2023solarcruiser}.
+
+Di contro però, la spinta fotonica presenta svantaggi significativi che derivano dalla sua intensità e dalla sua dipendenza dalla distanza dalla fonte di luce.
+
+La pressione di radiazione solare a $1 \text{ AU}$ (Unità Astronomica) è estremamente debole, circa $4.56 \times 10^{-6} \, \text{N/m}^2$ su una superficie perfettamente assorbente \cite{mcinnes1999solar}. Di conseguenza, per generare accelerazioni utili, sono necessarie vele di dimensioni enormi (centinaia o migliaia di metri quadrati) accoppiate a masse di payload minime. Questo solleva enormi problemi di resistenza dei materiali, di dispiegamento della vela e di controllo del veicolo, poiché anche la più piccola perturbazione può causare problemi significativi nella traiettoria e moto del veicolo \cite{johnson2012status}.
+
+Inoltre, l'intensità della spinta data dalla pressione di radiazione solare è legata alla legge dell'inverso del quadrato della distanza ($1/r^2$). Mentre le vele solari sono estremamente efficaci nel sistema solare interno, la loro utilità propulsiva decade rapidamente spingendosi oltre l'orbita di Marte. 
+
+Infine, i modelli ottici realistici dimostrano che la degradazione della membrana riflettente a causa dell'ambiente spaziale (radiazioni UV, micrometeoriti) riduce l'efficienza di spinta nel tempo, imponendo limiti alla durata operativa della missione \cite{johnson2012status}\cite{simo2016realistic}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Vele solari nella storia}
+
+Nonostante le sfide riguardanti la progettazione e gli svantaggi intrinseci, la propulsione fotonica ha riscosso successo per quanto riguarda la validazione dei modelli teorici e la dimostrazione pratica della fattibilità di questa tecnologia.
+
+Tra le prime missioni, la più celebre è senz'altro IKAROS (Interplanetary Kite-craft Accelerated by Radiation Of the Sun), lanciata dalla JAXA nel 2010. IKAROS è stata la prima sonda a dimostrare con successo la propulsione a vela solare in un ambiente interplanetario, riuscendo a dispiegare una vela di 14 metri di diametro e a raggiungere una velocità di circa $400 \, \text{m/s}$ grazie alla spinta fotonica \cite{rodrigues2023review}\cite{johnson2012status}.
+
+Nel 2008 e nel 2010 la NASA lancia rispettivamente le missioni NanoSail-D1 e NanoSail-D2, entrambe progettate per testare la tecnologia delle vele solari su piattaforme CubeSat \cite{johnson2012status}.
+Mentre la prima andò perduta a causa di un fallimento durante il lancio, la seconda missione riuscì a completare con successo il dispiegamento della vela in orbita. Questo traguardo permise di osservare effetti pratici significativi, quali l'incremento della resistenza aerodinamica e la conseguente deorbitazione accelerata, validando al contempo le tecnologie di attuazione e la sensoristica su piattaforme satellitari miniaturizzate \cite{johnson2012status}.
+
+Seconda per importanza è la missione LightSail 2 della Planetary Society, lanciata nel 2019. La sonda ha dimostrato con successo la fattibilità del controllo dell'orbita terrestre utilizzando esclusivamente la spinta fotonica generata dalla vela solare \cite{spencer2023lightsail2}. I risultati di volo di LightSail 2 hanno fornito dati telemetrici inestimabili sul comportamento dinamico della membrana in ambiente LEO (\textit{Low Earth Orbit}) e sulle strategie di controllo di assetto \cite{spencer2023lightsail2}.
+
+Per quanto riguarda le missioni più recenti, la NASA aveva annunciato il progetto Solar Cruiser, previsto per il lancio nel 2025, cancellato però nel 2022. Questa missione ambiziosa mirava ad utilizzare una vela solare di grandi dimensioni (circa 1600 metri quadrati) per posizionare una sonda su un'orbita in modo da poter consentire osservazioni continue dei poli solari \cite{mcconnell2023solarcruiser}.
+
+Guardando alle applicazioni interplanetarie e in spazio profondo, l'interesse da parte delle agenzie spaziali è in forte crescita. Architetture di missione come la proposta Solar Cruiser mirano a utilizzare la propulsione fotonica non solo per viaggiare, ma per abilitare osservazioni scientifiche impossibili con veicoli a propulsione tradizionale \cite{mcconnell2023solarcruiser}.
+
+Queste missioni confermano che la vela solare non è più una speculazione teorica, ma una piattaforma tecnologica matura. Tuttavia, la progettazione di tali veicoli richiede sistemi di \textit{testing} e simulazione sempre più accurati, in grado di gestire le complesse interazioni vettoriali in tempo reale prima della fase di fabbricazione delle componenti, onerose in termini di costi e tempo.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Motivazioni e scopi della simulazione software}
+
+Come già evidenziato, la tecnologia a vela solare ha sicuramente bisogno di un lungo processo di sviluppo e di prototipazione prima di essere considerata pronta per missioni operative.
+La natura stessa della spinta fotonica si scontra con le limitazioni fisiche e ambientali del nostro pianeta, rendendo la fase di test delle componenti molto complessa e costosa.
+
+In questo contesto, la simulazione software è sicuramente la chiave per superare questa barriera, permettendo agli ingegneri di progettare, testare e ottimizzare i veicoli a propulsione fotonica in un ambiente virtuale che riproduce fedelmente le condizioni spaziali, senza dover affrontare i costi e i rischi associati alla prototipazione fisica.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Le difficoltà dei test fisici in ambiente spaziale reale}
+
+Il limite fondamentale nella sperimentazione fisica delle vele solari risiede nella sproporzione di scala tra le forze in gioco. La pressione di radiazione solare genera sollecitazioni nell'ordine dei micronewton per metro quadrato ($\mu\text{N/m}^2$). Sulla superficie terrestre, questa spinta infinitesimale è completamente impercettibile, se non addirittura annullata da forze ambientali come il vento e la gravità.
+
+Di conseguenza, testare il dispiegamento dei bracci telescopici o la dinamica di volo di una vela solare all'aria aperta è fisicamente impossibile. Le uniche alternative per i test hardware a terra consistono nell'utilizzo di enormi camere a vuoto termico equipaggiate con simulatori solari ad alta potenza. Sebbene utili per testare i meccanismi di apertura e la resistenza dei materiali in ambiente simulato, queste infrastrutture presentano vincoli di volume severi, precludendo l'analisi dinamica di vele su larga scala (che spesso superano le centinaia di metri quadrati). Inoltre, la complessità di replicare fedelmente le condizioni spaziali rende questi test poco pratici per la rappresentazione del comportamento reale in orbita.
+
+L'alternativa definitiva, ovvero il lancio in orbita di dimostratori tecnologici, comporta costi di sviluppo esorbitanti e un rischio di fallimento non indifferente (ad esempio, a causa di un dispiegamento parziale, come per la missione NanoSail-D1 \cite{johnson2012status}, o di un'anomalia nei sistemi di controllo d'assetto), rendendo l'approccio \textit{trial-and-error} fisico inaccettabile per gli standard dell'ingegneria dei sistemi aerospaziali.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Il ruolo dei simulatori software per ambienti aerospaziali}
+Per aggirare le barriere fisiche ed economiche dei test hardware, l'industria aerospaziale si affida massicciamente alle simulazioni software. Un simulatore permette di ricreare un ambiente in cui la gravità terrestre, l'atmosfera e le perturbazioni esterne possono essere modulate o completamente disattivate, mostrando l'effetto della sola pressione fotonica.
+
+Attraverso la simulazione, è possibile condurre un'analisi parametrica completa: l'ingegnere può variare in qualunque momento la massa del veicolo, l'estensione geometrica della vela e i coefficienti di riflettività della vela per osservare come questi fattori influenzino l'accelerazione vettoriale e le traiettorie risultanti.
+
+Tuttavia, gli strumenti di simulazione matematica tradizionali spesso eccellono nell'integrazione delle equazioni differenziali, ma mancano di un riscontro visivo e interattivo, rendendo complessa l'analisi spaziale tridimensionale di fenomeni complessi che possono riguardare moto, traiettorie, rotazioni e ombreggiamento.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{La scelta di un sistema real-time tramite un motore grafico}
+L'obiettivo primario di questo elaborato si sposa con tale vuoto metodologico: sviluppare un ambiente di simulazione per vele solari che unisca il rigore dell'integrazione fisica con le potenzialità visive e interattive di un motore grafico moderno (Unreal Engine). 
+
+La scelta di adottare un \textit{game engine} per una simulazione scientifica non è dettata da sole finalità estetiche, ma da precisi vantaggi ingegneristici che questa tecnologia offre in modo nativo, rendendola difatti ideale per rappresentare e analizzare sistemi dinamici complessi come quello orbitale:
+\begin{itemize}
+    \item \textbf{Esecuzione in tempo reale (Real-time):} A differenza dei simulatori offline, un motore grafico elabora la logica fisica e il rendering visivo in cicli continui (\textit{Tick}), permettendo all'utente di alterare i parametri fisici della vela (come massa o area) a runtime e osservare istantaneamente le variazioni di moto e traiettoria. Questa interattività è fondamentale per comprendere le dinamiche complesse della spinta fotonica e per testare sistemi di controllo d'assetto in tempo reale.
+    \item \textbf{Gestione spaziale e Ray Casting:} Il calcolo della pressione di radiazione richiede di determinare esattamente quanti e quali fotoni colpiscano la superficie della vela in base al suo orientamento rispetto al Sole. I motori grafici sono nativamente ottimizzati per algoritmi di determinazione delle collisioni (\textit{collision detection}) e intersezioni spaziali ad altissime prestazioni. Sfruttando le tecniche di \textit{ray casting} \cite{ericson2004real}, è possibile simulare il flusso fotonico come un fascio di raggi proiettati verso la sorgente luminosa, calcolando con precisione vettoriale il punto di impatto, l'angolo di incidenza e la normale della superficie in tempo reale.
+    \item \textbf{Telemetria visiva:} La capacità di renderizzare a schermo non solo il modello 3D del velivolo, ma anche i vettori tridimensionali della forza gravitazionale, della forza di radiazione e della velocità orbitale, fornisce agli ingegneri uno strumento di debug visivo (o \textit{Visual Telemetry}) insostituibile per comprendere le complesse interazioni della dinamica orbitale.
+\end{itemize}
+
+Utilizzando Unreal Engine e sviluppando in C++, è possibile creare un simulatore che coniughi le formule fisico-matematiche pure con un ambiente tridimensionale interattivo, offrendo un sistema di prova virtuale per la progettazione e analisi dei futuri veicoli a propulsione solare.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Obiettivi specifici del progetto di tesi}
+
+Alla luce delle limitazioni sperimentali e delle potenzialità che offrono gli attuali motori grafici moderni, questo elaborato ha lo scopo di progettare e sviluppare un ambiente di simulazione astrodinamica interattivo basato su Unreal Engine, validando il modello fisico implementato. L'applicativo è concepito per modellare il comportamento cinematico e dinamico di una vela solare sottoposta all'influenza del campo gravitazionale e della pressione di radiazione solare. Per raggiungere tale traguardo, lo sviluppo del progetto è stato guidato da tre obiettivi ingegneristici primari.
+
+\subsection{Validazione del modello fisico della Pressione di Radiazione Solare}
+
+Il primo obiettivo consiste nella traduzione rigorosa delle equazioni dell'ottica e della meccanica orbitale in algoritmi C++ efficienti. Tali equazioni devono calcolare matematicamente lo scambio di quantità di moto tra i fotoni e la complessa struttura geometrica del veicolo. Il sistema deve:
+\begin{itemize}
+    \item Calcolare la forza gravitazionale in funzione della distanza dai due centri di massa (Vela e Terra), utilizzando coerentemente le costanti astronomiche del Sistema Internazionale.
+    \item Calcolare la Pressione di Radiazione Solare (SRP) tenendo conto in tempo reale dell'orientamento della vela rispetto al vettore di incidenza della luce solare e dell'area esposta alla radiazione.
+    \item Aggiornare costantemente la posizione e la velocità del veicolo nello spazio tridimensionale in base alla forza risultante sulla vela.
+\end{itemize}
+
+La rigorosa validazione di questo modulo matematico assicura che il comportamento dinamico del veicolo virtuale rispecchi fedelmente i profili di missione teorici attesi.
+
+\subsection{Sviluppo di un motore a doppia modalità}
+
+Fattore fondamentale per la simulazione di sistemi dinamici è la gestione del tempo.
+Una manovra di variazione orbitale tramite spinta fotonica può richiedere mesi prima di produrre un effettivo cambiamento. Pertanto, il secondo obiettivo prevede l'implementazione di un'architettura software a "doppia modalità" che consenta all'utente di alternare tra due modalità operative. 
+
+Attraverso lo sviluppo di un gestore centralizzato (la classe \lstinline|ASimulationManager|), l'applicativo deve permettere all'utente di:
+\begin{itemize}
+    \item Operare in \textit{Real-Time Mode} (Rapporto 1:1), essenziale per l'analisi completa delle dinamiche di volo e gestione delle componenti di controllo per una vela solare. In questa modalità, ogni secondo di tempo reale corrisponde a un secondo di simulazione, permettendo all'utente di osservare in dettaglio le interazioni dinamiche e di intervenire manualmente sui parametri della vela.
+    \item Operare in \textit{Accelerated Time Mode} (tramite l'alterazione dinamica del \lstinline|TimeScale|), fondamentale per l'analisi di scenari a lungo termine. In questa modalità, è possibile accelerare la simulazione di giorni, settimane o mesi in pochi minuti di tempo reale, consentendo all'ingegnere di osservare l'evoluzione dell'orbita e delle forze su periodi di tempo estesi.
+\end{itemize}
+
+\subsection{Telemetria visiva e tracciamento dati persistente}
+
+Il terzo obiettivo fondamentale consiste nel fornire all'utente resoconti dettagliati e immediati sull'andamento della missione virtuale. È proprio da questi dati che l'ingegnere può effettivamente comprendere se il comportamento del veicolo simulato corrispone a quanto previsto dal modello teorico. Tale obiettivo è suddiviso in due funzionalità distinte ma complementari:
+\begin{itemize}
+    \item \textbf{Telemetria Visiva (Visual Debugging):} Implementazione di un sistema di rendering in overlay che disegni dinamicamente, direttamente nel \textit{viewport} 3D dell'editor, i vettori delle forze in gioco (attrazione gravitazionale, spinta SRP, forza netta) e i vettori cinematici. Ciò fornisce all'ingegnere un feedback immediato sulla correttezza dell'orientamento e sull'entità delle perturbazioni.
+    \item \textbf{Data Logging Persistente:} Sviluppo di una \textit{pipeline} di esportazione automatica che campioni, a frequenza prestabilita, i dati vitali della vela (coordinate spaziali, moduli delle velocità, intensità delle forze, tempo di simulazione) e li scriva su file di testo strutturati e di facile analisi (es. formato CSV). Solo con questi dati è possibile ottenere grafici che possano validare il comportamento del veicolo.
+\end{itemize}
+
+\section{Struttura dell'elaborato}
+Per rispondere agli obiettivi prefissati, questo elaborato è stato organizzato secondo una progressione logica che parte dai fondamenti teorici per giungere all'implementazione software e all'analisi dei risultati. L'elaborato è strutturato come segue:
+
+\begin{description}
+    \item[Capitolo 2 - Fondamenti Teorici:] Fornisce una sintesi delle conoscenze puramente scientifiche necessarie per la comprensione del progetto. Vengono trattati i fondamenti fisici della natura della luce, le equazioni della Pressione di Radiazione Solare (SRP), le basi della dinamica orbitale e un'introduzione all'architettura di Unreal Engine come strumento di calcolo scientifico.
+    
+    \item[Capitolo 3 - Architettura Software:] Inquadra la progettazione orientata agli oggetti (OOP) del simulatore. Viene descritta la gerarchia delle classi C++, il gestore centrale della simulazione (\lstinline|ASimulationManager|) e l'attore che modella la vela solare (\lstinline|ASolarSail|).
+    
+    \item[Capitolo 4 - Implementazione Fisica:] Entra nel dettaglio del codice sorgente, mostrando come i modelli ottici e le equazioni di interazione tra i fotoni e le superfici riflettenti siano stati tradotti in algoritmi coerenti eseguiti in tempo reale, includendo la gestione dell'orientamento vettoriale della vela.
+    
+    \item[Capitolo 5 - Dinamica a tempo discreto:] Analizza gli algoritmi di calcolo dell'accelerazione gravitazionale e i metodi di integrazione differenziale scelti per aggiornare la cinematica del veicolo ad ogni \textit{tick} della simulazione, con particolare attenzione alla gestione delle scale temporali (\textit{TimeScale}).
+    
+    \item[Capitolo 6 - Telemetria e Tracciamento Dati:] Descrive l'infrastruttura di output del simulatore. Presenta il sistema di \textit{visual debugging} basato sul disegno dei vettori di forza nell'editor 3D e il meccanismo di campionamento e salvataggio persistente dei dati cinematici su file esterni.
+    
+    \item[Capitolo 7 - Analisi dei Risultati:] Espone i dati estratti dalle simulazioni condotte. Attraverso grafici e tabelle, viene validato il comportamento dinamico della vela solare in diversi scenari orbitali, confrontando i risultati ottenuti con le aspettative teoriche.
+    
+    \item[Capitolo 8 - Conclusioni:] Tira le fila dell'intero progetto, riassumendo i traguardi raggiunti, evidenziando le limitazioni del modello attuale e proponendo i futuri sviluppi ingegneristici per l'espansione del software.
+\end{description}

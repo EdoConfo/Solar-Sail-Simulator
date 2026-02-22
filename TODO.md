@@ -18,7 +18,7 @@ Lista dei TODO organizzata per directory di progetto.
 - [x] Disegnare linee colorate per vedere raggio e forza.
 - [x] Migliorare la simulazione fisica (Griglia Multi-Ray e Simulation Manager).
 - [x] Salvare posizione e velocità su un file CSV per i grafici.
-- [ ] Attaccare la vela ad un satellite (Ho dei dubbi, vedremo dopo)
+- [x] Attaccare la vela ad un satellite (Ho dei dubbi, vedremo dopo)
 - [x] La spinta avviene solo da una faccia della vela... Risolvi
 - [x] Aggiungere fattore di riflessione alla classe `SolarSail` per gestire casi non ideali (attualmente è 2 fisso) e diversi per ogni vela.
 - [x] Animazioni di Terra e Sole (rotazione, rivoluzione) per rendere tutto più realistico e calibrato sul TimeScale.
