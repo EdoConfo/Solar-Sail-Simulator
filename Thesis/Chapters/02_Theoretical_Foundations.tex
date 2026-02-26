@@ -59,7 +59,7 @@ L'equazione \ref{eq:tsiolkovsky} mette in luce un problema fondamentale per l'in
 Questa relazione esponenziale è spesso definita come "tirannia dell'equazione del razzo". Essa dimostra che la massa iniziale richiesta cresce in modo esponenziale rispetto alla variazione di velocità desiderata \cite{mcinnes1999solar}. 
 
 Attraverso un esempio pratico è possibile chiarire questo concetto.
-Se si desidera raddoppiare il $\Delta v$ di una missione mantenendo costante il carico utile e il tipo di motore, non è sufficiente raddoppiare il propellente. Sarà necessario trasportare una quantità di carburante esponenzialmente maggiore, poiché il propulsore dovrà spendere energia per accelerare anche il carburante stesso che non è stato ancora espulso. Per le missioni interplanetarie dirette verso locazioni distanti dal sistema solare, i requisiti di $\Delta v$ rendono il rapporto $\Lambda$ talmente elevato da lasciare una frazione di massa per il carico scientifico (\textit{payload}) inferiore all'1\% / 2\% della massa totale al momento del lancio \cite{johnson2012status}.
+Se si desidera raddoppiare il $\Delta v$ di una missione mantenendo costante il carico utile e il tipo di motore, non è sufficiente raddoppiare il propellente. Sarà necessario trasportare una quantità di carburante esponenzialmente maggiore, poiché il propulsore dovrà spendere energia per accelerare anche il carburante stesso che non è stato ancora espulso. Per le missioni interplanetarie dirette verso destinazioni distanti dal sistema solare, i requisiti di $\Delta v$ rendono il rapporto $\Lambda$ talmente elevato da lasciare una frazione di massa per il carico scientifico (\textit{payload}) inferiore all'1\% / 2\% della massa totale al momento del lancio \cite{johnson2012status}.
 
 \begin{figure}[htbp!]
     \centering
@@ -161,7 +161,7 @@ Avvicinandosi al Sole (ad esempio verso Venere o Mercurio, come avvenuto per la 
 Sebbene l'utilizzo della Costante Solare ($P_E$) sia comune per le missioni riferite unicamente all'orbita terrestre, lo sviluppo di un simulatore astrodinamico complesso richiede un approccio più generalizzato. 
 Ecco perché un approccio più universale consiste nel calcolare la pressione di radiazione a partire dalla potenza totale emessa dal Sole, ovvero la sua luminosità ($L$), e adattare dinamicamente il calcolo in base alla posizione del veicolo.
 
-Difatti il Sole si comporta come una enorme lampada sferica che irradia energia in tutte le direzioni. La potenza totale emessa dal Sole è una costante fisica, espressa in $W$ che può essere calcolata a partire dalla Costante Solare e dall'area della sfera di raggio 1 AU:
+Difatti il Sole si comporta come un'enorme lampada sferica che irradia energia in tutte le direzioni. La potenza totale emessa dal Sole è una costante fisica, espressa in $W$ che può essere calcolata a partire dalla Costante Solare e dall'area della sfera di raggio 1 AU:
 
 \begin{equation}
     L \approx 3.828 \times 10^{26} \, \text{W}
@@ -225,13 +225,13 @@ Il modello matematico finora descritto assume che la vela solare sia una superfi
 Questo fenomeno, noto come \textbf{auto-occlusione}, azzera la spinta fotonica nelle zone oscurate. Le conseguenze sulla dinamica del veicolo sono due: 
 \begin{itemize}
     \item Una riduzione netta della spinta propulsiva totale.
-    \item Uno spostamento asimmetrico del centro di pressione, questo può generare un momento torcente che induce rotazioni non pianificate del veicolo, complicando le manovre di controllo d'assetto.
+    \item Uno spostamento asimmetrico del centro di pressione; questo può generare un momento torcente che induce rotazioni non pianificate del veicolo, complicando le manovre di controllo d'assetto.
 \end{itemize}
 
-Oltre a questo la vela può presentare deformazioni strutturali, pieghe o irregolarità che causano ulteriori ombre.
+Oltre a ciò, la vela può presentare deformazioni strutturali, pieghe o irregolarità che causano ulteriori ombre.
 
 Per calcolare con precisione l'area effettivamente illuminata, l'equazione algebrica $A_{\text{eff}} = A \cos(\alpha)$ non basta.
-Il calcolo deve essere impostato come un integrale di superficie che includa una funzione di visibilità $v(x,y)$, la quale restituisce valore $1$ se il punto è direttamente illuminato e $0$ se è in ombra:
+Il calcolo deve essere impostato come un integrale di superficie che includa una funzione di visibilità $v(x,y)$, la quale restituisce il valore $1$ se il punto è direttamente illuminato e il valore $0$ se è in ombra:
 
 \begin{equation}
     A_{\text{eff}} = \int_{A} v(x,y) \cos(\alpha) \, dA
@@ -254,7 +254,7 @@ Oltre all'auto-occlusione causata dai componenti specifici della vela solare, un
 
 Se un'eclissi totale comporta semplicemente l'azzeramento globale della spinta fotonica, le fasi di transizione o di occlusione parziale introducono problemi molto più complessi. Quando un corpo oscura solo una porzione della vela solare, si instaura una forte asimmetria nella distribuzione delle forze. 
 
-Dal punto di vista della meccanica dei corpi rigidi, la differenza di pressione causata dalla radiazione solare, fra l'ombra e la superficie illuminata, dà luogo ad una discordanza tra i due centri di pressione fotonica e di massa del veicolo che genera un momento torcente che provoca la rotazione del veicolo.
+Dal punto di vista della meccanica dei corpi rigidi, la differenza di pressione causata dalla radiazione solare, tra la zona in ombra e la superficie illuminata, dà luogo ad una discordanza tra i due centri di pressione fotonica e di massa del veicolo, generando un momento torcente che provoca la rotazione del veicolo.
 
 Il simulatore sviluppato in questo elaborato è capace di analizzare questa complessa casistica.
 In particolar modo, grazie alla modellazione tridimensionale della vela solare e alla simulazione dinamica del sistema solare, è possibile calcolare in tempo reale l'effetto di un'eclissi parziale, prevedendo con precisione la forza risultante e il momento torcente che agisce sul veicolo durante le fasi di transizione.
@@ -426,7 +426,7 @@ dove:
 \begin{itemize}
     \item $G$ è la Costante di Gravitazione Universale ($6.674 \times 10^{-11} \, \text{m}^3 \text{kg}^{-1} \text{s}^{-2}$), fondamentale che quantifica l'intensità gravitazionale;
     \item $M$ è la massa del corpo centrale, espressa in $\text{kg}$, che genera il campo gravitazionale;
-    \item $m$ è la massa del veicolo spaziale, che subisce l'attrazione gravità generata dal corpo centrale;
+    \item $m$ è la massa del veicolo spaziale, che subisce l'attrazione gravitazionale generata dal corpo centrale;
     \item $r$ è la distanza tra i centri di massa del corpo centrale e del veicolo spaziale, misurata in metri;
     \item $\mathbf{\hat{r}}$ è il versore che indica la direzione dal centro del pianeta verso il veicolo spaziale, con il segno negativo che indica che la forza è attrattiva (verso il corpo centrale).
 \end{itemize}
@@ -472,7 +472,7 @@ Infine quindi, l'equazione vettoriale dell'accelerazione gravitazionale centrale
 \subsection{Sintesi finale: l'Equazione del Moto}
 Ora che sono state definite sia gravità ($\mathbf{a}_g$) che spinta fotonica ($\mathbf{a}_{\text{SRP}}$), è possibile unirle per ottenere l'equazione finale che descrive il movimento della vela solare.
 
-Per mantenere il calcolo gestibile, si ricorre solitamente a un'approssimazione pratica: vengono ignorate le forze secondarie marginali: come l'attrito dell'alta atmosfera, l'attrazione della Luna o la forma non perfettamente sferica della Terra. Fatto ciò, l'accelerazione totale della navicella è semplicemente la somma di chi la tira verso il basso (il pianeta) e di chi la spinge via (il Sole):
+Per mantenere il calcolo gestibile, si ricorre solitamente a un'approssimazione pratica: vengono ignorate le forze secondarie marginali, come l'attrito dell'alta atmosfera, l'attrazione della Luna o la forma non perfettamente sferica della Terra. Fatto ciò, l'accelerazione totale della navicella è semplicemente la somma di chi la tira verso il basso (il pianeta) e di chi la spinge via (il Sole):
 
 \begin{equation} \label{eq:equazione_moto_finale}
     \ddot{\mathbf{r}} = \mathbf{a}_g(\mathbf{r}) + \mathbf{a}_{\text{SRP}}(\mathbf{r}, \alpha, \rho_s, \rho_d)
@@ -491,7 +491,7 @@ Espandendo questa formula e inserendo tutte le equazioni che sono state dimostra
     \label{fig:orbital_forces}
 \end{figure}
 
-Come è facile intuire, questa equazione è estremamente complessa. Questo complica notevolmente la possibilità di prevedere con precisione la traiettoria del veicolo spaziale, poiché ogni variabile è in continua evoluzione durante il viaggio. Man mano che il veicolo viaggia, la distanza ($r$) varia, modificando contemporaneamente sia l'attrazione gravitazionale che l'intensità della luce. Inoltre, ogni minima rotazione della vela cambia gli angoli di incidenza e i vettori di direzione ($\mathbf{n}$ e $\mathbf{t}$).
+Come è facile intuire, questa equazione è estremamente complessa. Tale complessità rende notevolmente difficile la possibilità di prevedere con precisione la traiettoria del veicolo spaziale, poiché ogni variabile è in continua evoluzione durante il viaggio. Man mano che il veicolo viaggia, la distanza ($r$) varia, modificando contemporaneamente sia l'attrazione gravitazionale che l'intensità della luce. Inoltre, ogni minima rotazione della vela cambia gli angoli di incidenza e i vettori di direzione ($\mathbf{n}$ e $\mathbf{t}$).
 
 A causa di queste continue variazioni, è matematicamente impossibile risolvere questa equazione "a mano" con carta e penna per prevedere dove si troverà la vela tra un mese. L'unico modo per tracciare la rotta è usare un approccio virtuale: far calcolare al computer questa enorme formula ogni istante. Il prossimo capitolo spiegherà proprio come la programmazione a oggetti e il motore grafico Unreal Engine 5 siano stati impiegati per compiere questo complesso lavoro.
 
