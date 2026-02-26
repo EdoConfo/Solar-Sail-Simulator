@@ -1,8 +1,9 @@
 \chapter{Architettura Software}
 \label{chap:architettura_software}
 
-La traduzione del rigoroso framework matematico descritto nel capitolo precedente in un ambiente virtuale interattivo richiede una solida base informatica. Questo capitolo analizza l'architettura Object-Oriented (OOP) sviluppata all'interno del motore grafico Unreal Engine 5, illustrando come le entità fisiche della simulazione siano state modellate attraverso classi C++ specializzate, garantendo sia prestazioni in tempo reale sia fedeltà numerica nell'integrazione astrodinamica.
+La traduzione del rigoroso ecosistema matematico descritto nel capitolo precedente in un ambiente virtuale interattivo richiede una solida base informatica. Questo capitolo analizza l'architettura Object-Oriented (OOP) sviluppata all'interno del motore grafico Unreal Engine 5, illustrando come le entità fisiche della simulazione siano state modellate attraverso classi C++ specializzate, garantendo sia prestazioni in tempo reale sia fedeltà numerica nell'integrazione astrodinamica.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Unreal Engine come framework di calcolo scientifico}
@@ -51,8 +52,16 @@ In ottica astrodinamica, il \lstinline|DeltaTime| assume il ruolo di passo di in
     \item Aggiorna la trasformazione spaziale 3D del veicolo in base alla nuova cinematica locale.
 \end{enumerate}
 
+\begin{figure}[htbp!]
+    \centering
+    % \includegraphics[width=0.8\textwidth]{Images/tick_physics_loop.png}
+    \caption{Diagramma di flusso dell'integrazione numerica eseguita a ogni ciclo di \textit{Tick}: il motore grafico funge da solutore iterativo per le equazioni differenziali del moto.}
+    \label{fig:tick_physics_loop}
+\end{figure}
+
 Questo approccio a ciclo continuo garantisce che la simulazione avvenga in modo fluido e interattivo, permettendo all'ingegnere di variare a \textit{runtime} l'inclinazione della vela solare e osservare istantaneamente come tali variazioni modifichino l'accelerazione netta e la conseguente traiettoria del veicolo fotonico.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Progettazione Object-Oriented (OOP) del sistema}
@@ -101,10 +110,18 @@ UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Solar Sail|Optical",
 double SpecularReflectance;
 \end{lstlisting}
 
+\begin{figure}[htbp!]
+    \centering
+    % \includegraphics[width=0.6\textwidth]{Images/uproperty_editor.png}
+    \caption{L'esposizione sicura delle variabili di stato tramite \lstinline|UPROPERTY|. L'interfaccia generata automaticamente dall'editor rispetta i vincoli matematici imposti dai metadati C++, impedendo l'inserimento di valori fisicamente invalidi.}
+    \label{fig:uproperty_editor}
+\end{figure}
+
 L'utilizzo dei metadati di restrizione (\lstinline|ClampMin|, \lstinline|ClampMax|) direttamente all'interno della macro rappresenta una trasposizione informatica diretta dei vincoli fisici naturali: impone a livello di editor che la massa non sia mai pari a zero (evitando disastrose divisioni per zero nel calcolo dell'accelerazione $\mathbf{a} = \mathbf{F}/m$) e costringe i coefficienti ottici nel ristretto dominio logico $[0, 1]$.
 
 Dal punto di vista della logica di esecuzione, il modulo di calcolo orbitale puro (gravitazione universale di Newton) è stato tenuto logicamente disaccoppiato dal modulo ottico perturbativo (\textit{ray casting} e pressione di radiazione fotonica). La funzione \lstinline|Tick()| invoca questi sottomoduli in stretta sequenza, accumulando le singole forze in un vettore \lstinline|NetForce| tridimensionale globale. Questo approccio altamente modulare assicura che in futuro sia possibile implementare nuove perturbazioni astrodinamiche (ad esempio, l'effetto dell'albedo terrestre, l'attrazione gravitazionale di un terzo corpo come la Luna o l'attrito atmosferico residuo per orbite LEO bassissime) semplicemente aggiungendo una nuova funzione matematica alla \textit{pipeline} di sommatoria delle forze, senza dover in alcun modo alterare o riscrivere il delicato nucleo del risolutore cinematico principale.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Il gestore della simulazione (Simulation Manager)}
@@ -149,6 +166,7 @@ Quando l'utente richiede una variazione di assetto spaziale, il \textit{Manager}
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Modellazione del veicolo spaziale (Solar Sail)}
 Se il \lstinline|ASimulationManager| rappresenta indubbiamente il "cervello" ambientale e temporale del simulatore, la complessa classe \lstinline|ASolarSail| ne costituisce il vero e proprio fulcro fisico e cinematico. Progettata ingegneristicamente come una specializzazione avanzata della classe base \lstinline|AActor|, questa entità informatica funge da "gemello digitale" (\textit{digital twin}) della sonda spaziale fisica. Il suo scopo informatico è intrinsecamente duplice: fornire una rappresentazione spaziale estremamente accurata per il calcolo delle delicate intersezioni ottiche fotoniche e incapsulare lo stato dinamico vettoriale del veicolo, evolvendolo coerentemente istante per istante.
@@ -163,6 +181,13 @@ La scelta progettuale di utilizzare una complessa mesh poligonale invece di form
     \item \textbf{Estrazione immediata del Vettore Normale ($\mathbf{n}$):} Il motore grafico, essendo nativamente ottimizzato per il calcolo delle normali alle superfici, è in grado di calcolare istantaneamente il vettore matematico perpendicolare alla faccia dei soli poligoni correntemente illuminati. Questo versore dinamico è il parametro cardine indispensabile per l'applicazione della legge del coseno ottica ($A_{\text{eff}} = A \cos\alpha$) e per determinare la precisa direzione tridimensionale della forza risultante riflessa.
     \item \textbf{Collider avanzato per il Ray Casting:} La mesh poligonale non possiede una valenza unicamente estetica per l'operatore, ma agisce attivamente come un \textit{collider} matematico di precisione. Quando gli infiniti raggi (vettori direzionali continui) generati idealmente dal \textit{Simulation Manager} in direzione della vela intersecano fisicamente i poligoni virtuali, l'efficiente sistema di collisione interno di Unreal Engine restituisce una complessa struttura dati definita \lstinline|FHitResult|. Questa struttura software contiene informazioni numeriche esatte sul punto tridimensionale d'impatto e sull'orientamento spaziale esatto della micro-superficie colpita, permettendo all'algoritmo del simulatore di distinguere con precisione millimetrica tra un'illuminazione frontale pura, un'illuminazione radente inefficace o una condizione totale di ombra auto-indotta.
 \end{itemize}
+
+\begin{figure}[htbp!]
+    \centering
+    % \includegraphics[width=0.75\textwidth]{Images/sail_wireframe.png}
+    \caption{Visualizzazione \textit{wireframe} (a fil di ferro) della membrana solare simulata in Unreal Engine. L'alta densità poligonale garantisce una discretizzazione spaziale eccellente per l'accuratezza degli algoritmi di \textit{Ray Casting}.}
+    \label{fig:sail_wireframe}
+\end{figure}
 
 Infine, per garantire il massimo rigore sia visivo che prestazionale durante la simulazione in tempo reale, al componente geometrico principale viene applicato uno specifico \textit{Material Instance} dinamico programmato nel \textit{Material Graph} del motore. Questo \textit{material shader} fotorealistico è configurato rigorosamente in modalità \textit{Two-Sided} (doppia faccia fisica): un lato simula visivamente e computazionalmente il sottile film di alluminio altamente riflettente (su cui l'algoritmo calcola l'effettiva spinta propulsiva), mentre il lato opposto rappresenta il nudo polimero di supporto (es. Kapton o Mylar), caratterizzato da un'alta emissività termica e nullo potere propulsivo fotonico.
 
@@ -183,3 +208,6 @@ Per bypassare questo limite commerciale, la classe \lstinline|ASolarSail| implem
 Durante l'esecuzione di ogni singolo e ravvicinato ciclo di \lstinline|Tick|, questi tre massicci gruppi di proprietà convergono in un'unica complessa operazione differenziale: l'area geometrica e i coefficienti ottici determinano il vettore della forza fotonica incidente; la massa strutturale permette di convertire immediatamente tale forza repulsiva in accelerazione vettoriale locale ($\mathbf{a} = \mathbf{F}/m$) sommandola al massiccio contributo gravitazionale dipendente dalla stringente posizione $\mathbf{r}$; infine, l'algoritmo di integrazione numerica personalizzato (che sarà approfonditamente discusso nel Capitolo 4) aggiorna matematicamente la nuova velocità $\mathbf{v}$ e la conseguente posizione spaziale orbitale.
 
 Questa fusione profonda e inestricabile tra geometria pura (la mesh poligonale) e matematica avanzata (vettori a 64-bit e complessi coefficienti ottici) all'interno di un'unica classe C++ estremamente coesa, dimostra inequivocabilmente l'efficacia e l'assoluta necessità del paradigma \textit{Object-Oriented} nella moderna progettazione aerospaziale: il veicolo simulato è un'entità informatica autonoma, autosufficiente, che incapsula al proprio interno tutto l'hardware e il software di cui ha vitale bisogno per "subire" coerentemente le immani leggi dell'universo virtuale orchestrato dal Simulation Manager.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

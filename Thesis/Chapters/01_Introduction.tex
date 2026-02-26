@@ -2,6 +2,9 @@
 \addcontentsline{toc}{chapter}{Introduzione}
 \markboth{INTRODUZIONE}{INTRODUZIONE}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section*{Il problema della propulsione spaziale e i limiti chimici}
 
 Dagli inizi dei razzi suborbitali sino alle più recenti missioni interplanetarie, tutta la storia dell'esplorazione spaziale si è in sostanza giocata, e si gioca tuttora, sull'impiego della propulsione chimica, in base al principio della conservazione della quantità di moto, o della terza legge della dinamica di Newton, il quale afferma che per ottenere la spinta necessaria a far muovere in una direzione determinata un veicolo, esso deve accelerare ed espellere nella direzione opposta una determinata massa, propellente \cite{rodrigues2023review}.
@@ -22,10 +25,13 @@ Con limiti di prestazioni così severi, missioni interplanetarie complesse o mis
 Inoltre, una volta che il propellente si è esaurito, il veicolo perde totalmente la capacità di manovrare, diventando un oggetto controllato esclusivamente dalle leggi della meccanica orbitale. L'esigenza di liberarsi da questa catena logistica e di abilitare nuovi generi di missioni nello spazio profondo ha spinto la ricerca verso l'adozione di propulsori \textit{propellantless}, dove la fonte di energia per la spinta non risiede nel veicolo stesso, ma viene attinta direttamente dall'ambiente spaziale \cite{johnson2012status}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section*{Il principio della propulsione a vela solare}
 
 Nasce quindi l'esigenza di svincolarsi dalle limitazioni della propulsione chimica per favorire lo sviluppo di tecnologie propulsive alternative che possano fornire una spinta continua al veicolo senza richiedere il trasporto di una grande massa di propellente. Tra varie soluzioni proposte nel tempo, la propulsione a vela solare è senza dubbio una delle più promettenti e affascinanti, ma richiede un cambio radicale nello sviluppo di missioni spaziali.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection*{L'intuizione storica e la definizione concettuale}
 
@@ -44,6 +50,8 @@ La caratteristica distintiva di questo sistema è che la forza propulsiva non de
 Tale fenomeno fu predetto teoricamente per la prima volta da James Clerk Maxwell nella seconda metà dell'Ottocento, attraverso le sue equazioni dell'elettromagnetismo che dimostrano come i campi elettromagnetici trasportino non solo energia ma anche quantità di moto, esercitando così una forza su superfici riflettenti \cite{rodrigues2023review}\cite{johnson2012status}. 
 Sebbene i fotoni siano particelle prive di massa, essi possiedono una quantità di moto direttamente proporzionale alla loro energia. Quando un flusso di fotoni colpisce la superficie riflettiva della vela, si genera una variazione della quantità di moto che, per il principio di conservazione, imprime una forza sulla superficie della vela \cite{mcinnes1999solar}. 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \subsection*{Vantaggi e sfide ingegneristiche dei materiali}
 
 Il vantaggio principale e ineguagliabile della vela solare risiede in un impulso specifico teoricamente infinito. Non espellendo alcun propellente, infatti, il veicolo è limitato unicamente dalla degradazione dei suoi materiali nel tempo e non dalla capacità dei suoi serbatoi. Questa caratteristica si traduce in una spinta continua che, accumulata su mesi o anni di missione, permette di raggiungere variazioni di velocità totali sbalorditive, inarrivabili per qualsiasi propulsore chimico \cite{mcinnes1999solar}.
@@ -58,6 +66,8 @@ Il vantaggio principale e ineguagliabile della vela solare risiede in un impulso
 Di contro, la spinta fotonica presenta svantaggi significativi che derivano dalla sua intensità. La pressione di radiazione solare a $1 \text{ AU}$ (Unità Astronomica) è estremamente debole \cite{mcinnes1999solar}. Di conseguenza, per generare accelerazioni utili, sono necessarie vele di dimensioni enormi accoppiate a masse di payload minime. 
 
 Questo solleva enormi problemi di resistenza dei materiali, di dispiegamento della vela e di controllo del veicolo \cite{johnson2012status}. Per ottenere masse contenute, la membrana della vela deve possedere spessori dell'ordine di pochissimi micrometri (una frazione dello spessore di un capello umano), impiegando avanzati film polimerici come il Kapton o il Mylar. Inoltre, la spinta decade rapidamente spingendosi verso il sistema solare esterno, seguendo la rigorosa legge dell'inverso del quadrato della distanza, limitando l'impiego primario di queste sonde al sistema solare interno o a traiettorie di fuga solari ravvicinate.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection*{Vele solari nella storia dell'esplorazione spaziale}
 
@@ -86,6 +96,7 @@ Seconda per importanza mediatica e ingegneristica è la missione LightSail 2 del
 Queste missioni confermano inequivocabilmente che la vela solare non è più una speculazione teorica, ma una piattaforma tecnologica pronta per l'uso operativo. Tuttavia, la progettazione di tali veicoli richiede sistemi di \textit{testing} e simulazione sempre più accurati, in grado di gestire le complesse interazioni vettoriali in tempo reale prima della fase di fabbricazione delle componenti.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section*{Motivazioni e scopi della simulazione software}
 
@@ -113,6 +124,7 @@ La scelta di adottare un \textit{game engine} non è di natura puramente estetic
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section*{Obiettivi specifici del progetto di tesi}
 
@@ -124,6 +136,7 @@ L'applicativo software sviluppato nel contesto di questa ricerca è concepito pe
     \item \textbf{Telemetria visiva e tracciamento dati persistente:} Sviluppo di un sistema di \textit{visual debugging} direttamente posto nel viewport 3D dell'editor e di una procedura di esportazione dati (in formato CSV) per campionare e analizzare esternamente l'integrità della telemetria orbitale prodotta dal motore fisico.
 \end{enumerate}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section*{Struttura dell'elaborato}
@@ -139,3 +152,6 @@ Al fine di esporre in modo esaustivo il lavoro svolto, il presente elaborato è 
     \item[Capitolo 6 - Analisi dei Risultati :] Espone e analizza criticamente i grafici dei dati estratti per validare l'effettivo sollevamento orbitale e il comportamento dinamico del veicolo.
     \item[Capitolo 7 - Conclusioni e Sviluppi Futuri:] Riassume i risultati ottenuti, riflette sulle limitazioni del modello attuale e propone potenziali miglioramenti e direzioni di ricerca future.
 \end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
