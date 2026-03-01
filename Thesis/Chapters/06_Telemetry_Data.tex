@@ -1,0 +1,329 @@
+\chapter{Telemetria e Strumenti di Diagnostica}
+\label{chap:telemetria}
+
+Un simulatore spaziale perde la sua importanza scientifica se non è in grado di fornire dati quantitativi e qualitativi sull'evoluzione della missione. La telemetria, intesa come l'insieme di strumenti e tecniche per la raccolta, visualizzazione e archiviazione dei dati di volo, è quindi un componente cruciale per qualsiasi piattaforma di simulazione orbitale.
+
+In questo capitolo, verranno illustrate le soluzioni implementate per garantire una telemetria completa, efficiente e chiara all'interno del simulatore di vele solari. Verranno analizzati i sistemi di debug visivo in tempo reale, il meccanismo di logging persistente su file CSV e l'approccio alla post-elaborazione dei dati tramite script Python dedicati.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Telemetria Live e Debug Visivo}
+
+Durante la fase di test e simulazione, è fondamentale che l'utente comprenda istantaneamente come le forze stiano agendo sul veicolo senza dover attendere l'analisi dei dati a fine missione. A tale scopo, la funzione \lstinline|DebugVisuals()| si occupa di sovrapporre alla simulazione tridimensionale una serie di indicatori vettoriali e testuali, aggiornati a ogni singolo fotogramma.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Rappresentazione Vettoriale e Scia Orbitale}
+
+Il primo strumento riguarda l'analisi visiva delle forze e della traiettoria. Se abilitati dal pannello del \lstinline|SimulationManager|, il sistema disegna frecce direzionali tridimensionali (\lstinline|DrawDebugDirectionalArrow|) ancorate al centro di massa della vela. Queste frecce rappresentano visivamente i versori della Gravità (blu), della Pressione Solare (rosso), della Forza Totale risultante (magenta) e della Normale della vela (verde). 
+
+\begin{lstlisting}[language=C++, caption={Generazione delle frecce vettoriali per il debug delle forze in \lstinline|SolarSail.cpp|.}]
+const float ArrowLen = 1000.0f;
+const float ArrowSize = 150.f;
+
+// Disegno dei vettori di forza (scalati per visibilita')
+if (Manager->ShowSailNormalDebug) 
+    DrawDebugDirectionalArrow(GetWorld(), SailLoc, SailLoc + (FVector(SailNormal) * ArrowLen), ArrowSize, FColor::Green, false, -1, 0, 5.0f);
+
+if (Manager->ShowGravityForceDebug) 
+    DrawDebugDirectionalArrow(GetWorld(), SailLoc, SailLoc + (FVector(GravityForceVersor) * ArrowLen), ArrowSize, FColor::Blue, false, -1, 0, 5.0f);
+
+if (Manager->ShowSolarForceDebug) 
+    DrawDebugDirectionalArrow(GetWorld(), SailLoc, SailLoc + (FVector(SolarForceVersor) * ArrowLen), ArrowSize, FColor::Red, false, -1, 0, 5.0f);
+
+if (Manager->ShowTotalForceDebug) 
+    DrawDebugDirectionalArrow(GetWorld(), SailLoc, SailLoc + (FVector(TotalForce.GetSafeNormal()) * ArrowLen), 200.f, FColor::Magenta, false, -1, 0, 7.0f);
+\end{lstlisting}
+
+Oltre a questo, per rendere chiara e marcata la forma dell'orbita, il codice genera una scia luminosa che traccia il percorso della vela. Per evitare di saturare la memoria della RAM con migliaia di coordinate inutili, il sistema implementa un filtro spaziale e una logica a coda (FIFO):
+
+\begin{lstlisting}[language=C++, caption={Gestione ottimizzata della scia orbitale in \lstinline|SolarSail.cpp|.}]
+// Aggiunta di un nuovo punto solo se la distanza supera la soglia
+float DistSq = FVector::DistSquared(OrbitHistory.Last(), SailLoc);
+float ThresholdUU = TrailPointMinDistance * Manager->KM_TO_UU;
+
+if (DistSq > (ThresholdUU * ThresholdUU)) {
+    OrbitHistory.Add(SailLoc);
+    
+    // Rimozione del punto piu' vecchio se si supera il limite di memoria (FIFO)
+    if (OrbitHistory.Num() > MaxTrailPoints) {
+        OrbitHistory.RemoveAt(0);
+    }
+}
+\end{lstlisting}
+
+La scia non memorizza la posizione a ogni singolo \textit{Tick}, ma registra un nuovo vertice solo quando la vela ha percorso una distanza minima prestabilita, indicata dalla variabile \lstinline|TrailPointMinDistance|. Inoltre, l'array \lstinline|OrbitHistory| è limitato a un numero massimo di punti (\lstinline|MaxTrailPoints|); raggiunto il limite, il vertice più vecchio viene eliminato tramite \lstinline|RemoveAt(0)|. Una volta accumulati nell'array, i punti devono essere uniti per formare la linea continua dell'orbita. Per evitare che lo schermo si riempia di linee opache e visivamente piatte, il sistema calcola "l'età" di ogni singolo segmento basandosi sulla sua posizione all'interno della coda (tramite la variabile \lstinline|Alpha|). Sfruttando questo valore percentuale, la funzione \lstinline|FMath::Lerp| esegue una modifica cromatica: i segmenti più vecchi (in testa all'array) vengono disegnati con un colore scuro e semi-trasparente, mentre quelli appena generati (vicino alla sonda) vengono colorati di  un ciano brillante. Questo approccio matematico crea un perfetto "effetto cometa", simulando la dissipazione della scia nel vuoto e rendendo chiara la direzione del moto a colpo d'occhio.
+
+\begin{lstlisting}[language=C++, caption={Rendering e interpolazione cromatica della scia orbitale in \lstinline|SolarSail.cpp|.}]
+// Disegno dei segmenti della scia
+if (OrbitHistory.Num() > 1) {
+for (int32 i = 0; i < OrbitHistory.Num() - 1; i++) {
+
+    // Calcolo dell'eta' del segmento (da 0.0 a 1.0)
+    float Alpha = (float)i / (float)OrbitHistory.Num();
+    
+    // Sfumatura dal blu scuro/trasparente al ciano brillante
+    FLinearColor ColorLinear = FMath::Lerp(FLinearColor(0.1f, 0.0f, 1.0f, 0.5f), FColor::Cyan, Alpha);
+    
+    DrawDebugLine(
+        GetWorld(), 
+        OrbitHistory[i], 
+        OrbitHistory[i + 1], 
+        ColorLinear.ToFColor(true), 
+        false, -1, 0, 
+        150.0f // Spessore visivo della linea
+    );
+}
+// Collegamento finale tra l'ultimo punto salvato e la posizione attuale della sonda
+DrawDebugLine(GetWorld(), OrbitHistory.Last(), SailLoc, FColor::Cyan, false, -1, 0, 150.0f);
+}
+\end{lstlisting}
+
+\begin{figure}[htbp!]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Images/orbital_trail.png}
+    \caption{Rappresentazione visiva della scia orbitale generata da una vela solare.}
+    \label{fig:orbital_trail}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Debug Ottico del Ray Casting}
+
+Come analizzato nel Capitolo 4, l'interazione della luce con la membrana viene calcolata tramite il lancio di raggi virtuali. La funzione \lstinline|DebugVisuals()| estrae gli array generati durante quel calcolo (\lstinline|LocalActiveRays| e \lstinline|LocalBlockedRays|) e li converte nuovamente in coordinate globali del mondo tramite la matrice di trasformazione dell'attore (\lstinline|CurrentTrans.TransformPosition|). 
+Il motore grafico disegna quindi un fascio di laser verdi per i fotoni che impattano correttamente sulla vela e rossi per quelli che si trovano nella zona d'ombra generata da eventuali ostacoli, fornendo così un feedback visivo immediato sulla distribuzione dei raggi e sull'efficacia dell'orientamento della vela rispetto alla posizione del Sole.
+
+\begin{lstlisting}[language=C++, caption={Rendering dei laser diagnostici per il Ray Casting in \lstinline|SolarSail.cpp|.}]
+if (Manager->ShowPhotonDebug) {
+    FTransform CurrentTrans = GetActorTransform();
+    FVector SunDir = (Manager->SUN_POSITION * Manager->KM_TO_UU - SailLoc).GetSafeNormal();
+    float RayLen = 200.0f; // Lunghezza fissa visiva del raggio
+
+    // Rendering dei Raggi Verdi (Tasselli illuminati)
+    for (const FVector& LP : LocalActiveRays) {
+        FVector WorldStart = CurrentTrans.TransformPosition(LP);
+        FVector WorldEnd = WorldStart + (SunDir * RayLen);
+        DrawDebugLine(GetWorld(), WorldStart, WorldEnd, FColor::Green, false, -1, 0, 1.0f);
+    }
+    
+    // Rendering dei Raggi Rossi (Tasselli in ombra)
+    for (const FVector& LP : LocalBlockedRays) {
+        FVector WorldStart = CurrentTrans.TransformPosition(LP);
+        FVector WorldEnd = WorldStart + (SunDir * RayLen);
+        DrawDebugLine(GetWorld(), WorldStart, WorldEnd, FColor::Red, false, -1, 0, 1.0f);
+    }
+}
+\end{lstlisting}
+
+\begin{figure}[htbp!]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Images/raycasting_debug.png}
+    \caption{Rappresentazione visiva dei raggi di luce che colpiscono la vela (verde) e quelli bloccati da ostacoli (rosso).}
+    \label{fig:raycasting_debug}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{L'Interfaccia Telemetrica a Schermo (HUD)}
+
+Per fornire dati numerici in tempo reale senza dover aprire alcun menu, il codice inietta direttamente sullo schermo dell'utente una \textit{Heads-Up Display} (HUD) basata su testo. 
+Poiché la simulazione può ospitare decine di vele contemporaneamente, il sistema esegue innanzitutto una raccolta dinamica di tutti gli attori di classe \lstinline|ASolarSail| presenti nel mondo virtuale. Prima di stampare i dati, l'array viene ordinato in modo deterministico tramite una funzione Lambda basata sul \lstinline|SailIndex|:
+
+\begin{lstlisting}[language=C++, caption={Ordinamento dinamico delle vele per la stampa a schermo.}]
+ValidSails.Sort([](const ASolarSail& A, const ASolarSail& B) {
+    if (A.SailIndex == B.SailIndex) {
+        return A.GetActorLabel() < B.GetActorLabel();
+    }
+    return A.SailIndex < B.SailIndex;
+});
+\end{lstlisting}
+
+Per ogni vela individuata nella scena, l'algoritmo assembla un blocco di stringhe che funziona come vero e proprio pannello di controllo in cui i dati spaziali (Velocità, Distanza, Forza Solare e Area) vengono formattati e impaginati a colonna. 
+Per massimizzare la leggibilità, l'efficienza propulsiva viene tradotta in un indicatore grafico (\lstinline|AsciiBar|) che calcola il rapporto percentuale tra fotoni attivi e totali, riempiendo proporzionalmente una barra da $10$ segmenti visivi. Il blocco di testo viene infine inserito nel ciclo di rendering del motore tramite \lstinline|AddOnScreenDebugMessage|, assegnando colori differenti per evidenziare eventuali cali di efficienza o l'ingresso in una zona d'ombra planetaria.
+
+\begin{figure}[htbp!]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Images/live_telemetry.png}
+    \caption{Esempio di HUD testuale a schermo che mostra i dati telemetrici in tempo reale per una vela solare.}
+    \label{fig:live_telemetry}
+\end{figure}
+
+\begin{lstlisting}[language=C++, caption={Logica di ordinamento e generazione dell'HUD telemetrico in \lstinline|SolarSail.cpp|.}]
+// Ordinamento deterministico delle vele tramite funzione Lambda
+ValidSails.Sort([](const ASolarSail& A, const ASolarSail& B) {
+    if (A.SailIndex == B.SailIndex) {
+        return A.GetActorLabel() < B.GetActorLabel();
+    }
+    return A.SailIndex < B.SailIndex;
+});
+
+// Rendering dell'HUD testuale per ogni vela validata
+for (int32 i = 0; i < ValidSails.Num(); ++i) {
+    ASolarSail* S = ValidSails[i];
+    int32 BaseKey = RootKey - (i * LinesPerSail);
+
+    // Calcolo efficienza propulsiva e generazione barra grafica ASCII
+    float EfficiencyVal = (S->TotalPhotons > 0) ? ((float)S->ActivePhotons / (float)S->TotalPhotons) : 0.0f;
+    int32 FilledSegments = (int32)(EfficiencyVal * 10);
+    FString AsciiBar = TEXT("");
+    
+    for (int32 b = 0; b < 10; b++) {
+        AsciiBar += (b < FilledSegments) ? TEXT("#") : TEXT("-");
+    }
+
+    // Impostazione cromatica condizionale
+    FColor C_Warn = (EfficiencyVal > 0) ? FColor::Green : FColor::Red;
+    FString StatusStr = (S->ActivePhotons > 0) ? TEXT("ACTIVE") : TEXT("SHADOW");
+    
+    // Impaginazione dati (esempio intestazione e riga efficienza)
+    FString R00 = FString::Printf(TEXT("+-[ID %d]--[%s]------------"), S->SailIndex, *S->GetActorLabel());
+    FString R10 = FString::Printf(TEXT("| Efficiency: [%s] %s"), *AsciiBar, *StatusStr);
+    // [...] (omissione delle restanti righe spaziali e vettoriali)
+
+    // Stampa a schermo tramite il motore grafico
+    GEngine->AddOnScreenDebugMessage(BaseKey - 0, 1.0f, FColor::Cyan, R00);
+    // [...]
+    GEngine->AddOnScreenDebugMessage(BaseKey - 10, 1.0f, C_Warn, R10);
+}
+\end{lstlisting}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Il Sistema di Logging Persistente (CSV)}
+
+Mentre la telemetria live è utile all'utente durante l'esecuzione, l'analisi scientifica rigorosa richiede che i dati vengano salvati in modo persistente su file per poter essere esaminati a posteriori. Per questo motivo, è stata implementata una funzione dedicata alla scrittura di un file per ogni singola vela solare, garantendo così un'archiviazione ordinata e facilmente accessibile dei dati di volo.
+
+Il codice accede alle directory del sistema operativo interrogando la classe nativa \lstinline|FPaths::ProjectDir()| e genera una cartella dedicata denominata "Csvs". Per prevenire collisioni nei salvataggi, il sistema costruisce dinamicamente il nome del file concatenando la dicitura \textit{SolarSailData\_} con l'identificativo univoco dell'attore (\lstinline|SailName|), garantendo l'isolamento dei dati per ogni specifica vela.
+
+\begin{lstlisting}[language=C++, caption={Inizializzazione del file system e creazione dinamica dei file CSV in \lstinline|SolarSail.cpp|.}]
+void ASolarSail::InitializeCSVReporting() {
+    // 1. Costruzione sicura e multipiattaforma dei percorsi
+    FString ProjectDir = FPaths::ProjectDir();
+    FString CsvsDir = FPaths::Combine(ProjectDir, TEXT("Csvs"));
+    
+    // 2. Creazione della directory con controllo di sicurezza
+    if (!IFileManager::Get().MakeDirectory(*CsvsDir, true)) {
+        UE_LOG(LogTemp, Error, TEXT("[%s] Impossibile creare la cartella Csvs!"), *SailName);
+        return;
+    }
+    
+    // 3. Generazione dinamica del nome file per prevenire sovrascritture
+    FString FileName = FString::Printf(TEXT("SolarSailData_%s.csv"), *SailName);
+    CsvFilePath = FPaths::Combine(CsvsDir, FileName);
+    
+    bCsvHeaderWritten = false;
+    UE_LOG(LogTemp, Warning, TEXT("[%s] Log pronto in -> %s"), *SailName, *CsvFilePath);
+}
+\end{lstlisting}
+
+Il formato scelto per l'esportazione è il CSV, uno standard leggero, scalabile e universalmente compatibile con qualsiasi ambiente di calcolo.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Ottimizzazione I/O e gestione del Buffer temporale}
+
+Salvare fisicamente file su un disco rigido è un'operazione notoriamente lenta. Se il motore grafico tentasse di eseguire una scrittura sul disco 60 volte al secondo (per ogni singolo \textit{Tick} e per ogni singola vela), il sistema andrebbe incontro a un gravissimo rallentamento, con un impatto devastante sulle prestazioni e sulla fluidità della simulazione, ma soprattutto compromettendo la precisione del solutore cinematico.
+
+Per ovviare a questo grave problema di ottimizzazione del software, la funzione \lstinline|AppendDataToCSV()| implementa una tecnica di \textit{buffering} temporale:
+
+\begin{lstlisting}[language=C++, caption={Sistema di buffering per l'ottimizzazione delle scritture su disco in \lstinline|SolarSail.cpp|.}]
+// Creazione della stringa dati per il fotogramma corrente
+FString DataRow = FString::Printf(TEXT("%s,%.3f,%.2f,%.4f,%.4f,%.4e,%.4e,%.2f,%d\n"), 
+    *SailName, GetWorld()->GetTimeSeconds(), SailDistanceFromEarth, 
+    SailDistanceFromSun / 149597870.7, SailVelocity.Size(), TotalForce.Size(), 
+    SolarPressure, IncidenceAngle, ActivePhotons);
+
+// Accumulo dei dati nella memoria RAM temporanea (Buffer)
+CsvBuffer += DataRow;
+CsvWriteTimer += DeltaTime;
+
+// Scrittura fisica su disco solo ogni 1.0 secondi di tempo reale
+if (CsvWriteTimer > 1.0f) {
+    FFileHelper::SaveStringToFile(CsvBuffer, *CsvFilePath, 
+                                  FFileHelper::EEncodingOptions::AutoDetect, 
+                                  &IFileManager::Get(), FILEWRITE_Append);
+    CsvBuffer.Empty(); // Svuota il buffer dopo la scrittura
+    CsvWriteTimer = 0.0f;
+}
+\end{lstlisting}
+
+
+Con questa strategia, le righe contenenti i dati del singolo fotogramma non vengono scritte su file istantaneamente. Vengono invece concatenate all'interno di una singola e lunga variabile testuale immagazzinata nella memoria RAM (\lstinline|CsvBuffer|), che è molto più veloce rispetto a qualsiasi operazione di I/O su disco.
+
+Solo quando il timer \lstinline|CsvWriteTimer| certifica che è trascorso $1.0$ secondo esatto di tempo reale, il sistema "scarica" in blocco tutto il testo accumulato scrivendolo in coda al file fisico (tramite la \textit{flag} \lstinline|FILEWRITE_Append|). Subito dopo, il buffer in memoria viene svuotato per ricominciare il ciclo.
+
+Questa tecnica di buffering riduce drasticamente il numero di scritture su disco, mantenendo al contempo un flusso costante e affidabile di dati. Inoltre, per garantire che nessun dato venga perso in caso di chiusura improvvisa della simulazione, la funzione \lstinline|EndPlay()| esegue un'ultima scrittura forzata del buffer residuo, assicurando così che anche i frammenti di dati più recenti vengano salvati correttamente prima di terminare definitivamente la simulazione.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Post-Processing e Visualizzazione (Script Python)}
+
+Una volta salvati i dati nei rispettivi file CSV, è necessario poterli visualizzare in modo grafico. In questo modo, è possibile studiare l'andamento della traiettoria nel tempo e verificare la correttezza matematica del simulatore rispetto alle leggi fisiche.
+
+A tale scopo, invece di appesantire l'architettura di Unreal Engine integrando complesse librerie utente (\textit{UI}) per la generazione di grafici bidimensionali a schermo, si è scelto di mantenere diviso il codice di simulazione da quello di visualizzazione.
+
+Il simulatore in C++ agisce esclusivamente come solutore numerico e fornitore di dati. La fase diagnostica e visiva vera e propria è invece stata interamente delegata a uno script esterno indipendente, programmato in Python.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Automazione e Librerie Scientifiche}
+
+Lo script, denominato \lstinline|SolarSailPlot.py|, è stato strutturato per automatizzare il ciclo di lettura e stampa visiva senza richiedere all'utente di selezionare manualmente i file generati dal simulatore. All'avvio, il programma naviga autonomamente nella directory nativa di Unreal Engine, esegue un \textit{parsing} della cartella \textit{Csvs} condivisa e importa tutti i documenti disponibili. Sfruttando la potente libreria matematica \lstinline|pandas|, il codice compila il \textit{dataset}, correggendo eventuali errori di formattazione.
+
+\begin{lstlisting}[language=Python, caption={Automazione della ricerca file e importazione dati tramite Pandas in \lstinline|SolarSailPlot.py|.}]
+import pandas as pd
+import matplotlib.pyplot as plt
+import glob
+import os
+
+# 1. Ricerca automatica dei file CSV nella cartella di Unreal Engine
+SIMULATION_CSV_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..', 'Simulation', 'Csvs'))
+sim_files = glob.glob(os.path.join(SIMULATION_CSV_DIR, "*.csv"))
+
+# [...] (logica di copia dei file nella directory locale)
+
+# 2. Creazione della figura con 2 grafici impilati (Distanza e Velocita')
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10), sharex=True)
+
+# 3. Lettura robusta del CSV tramite pandas
+data = pd.read_csv(csv_path, skipinitialspace=True)
+\end{lstlisting}
+
+Per il grafico risultante, lo script impiega \lstinline|matplotlib| per generare due grafici impilati verticalmente: il primo dedicato alla distanza radiale e il secondo alla velocità orbitale, entrambi in funzione del tempo:
+
+\begin{enumerate}
+    \item \textbf{Grafico della Distanza Radiale:} Traccia la distanza in chilometri tra la vela e il centro della Terra. Questa curva rappresenta lo strumento primario per misurare l'efficacia propulsiva della vela: permette di visualizzare a colpo d'occhio il progressivo innalzamento dell'orbita generato dalla spinta continua e cumulativa dei fotoni solari sulla membrana.
+    \item \textbf{Grafico della Velocità Orbitale:} Mappa le oscillazioni cinetiche del veicolo. Oltre a confermare il rispetto delle leggi kepleriane (la sonda decelera allontanandosi dal pianeta e accelera riavvicinandosi), l'analisi di questa linea rivela come la pressione di radiazione applichi costantemente nuova energia nel sistema, alterando nel tempo il bilancio complessivo della vela rispetto a quello di un normale satellite.
+\end{enumerate}
+
+Il vero vantaggio di questo approccio a script risiede nella sua nativa rappresentazione di grafici multi-vela. In una simulazione in cui si stanno per esempio eseguendo tre vele solari caratterizzate da tre coefficienti di riflettività differenti, lo script è in grado di sovrapporre automaticamente le tre curve di distanza e le tre curve di velocità, assegnando a ciascuna un colore diverso (\lstinline|['b', 'g', 'r', 'c', 'm', 'y', 'k']|) e compilando automaticamente la legenda a schermo per facilitare il confronto visivo.
+
+\begin{lstlisting}[language=Python, caption={Ciclo di sovrapposizione multi-veicolo e plotting vettoriale.}]
+# Colori ciclici per distinguere visivamente le diverse vele
+colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k'] 
+
+for idx, csv_path in enumerate(csv_files):
+    
+    # Generazione automatica dell'etichetta legenda ripulendo il nome del file
+    label = os.path.basename(csv_path).replace("SolarSailData_", "").replace(".csv", "")
+    color = colors[idx % len(colors)]
+
+    # Estrazione delle colonne di interesse dai dati caricati
+    time = data['Timestamp(s)']
+    dist_earth = data['DistEarth(Km)']
+    velocity = data['Velocity(Km/s)']
+    
+    # Plotting sovrapposto sui due assi
+    ax1.plot(time, dist_earth, label=label, color=color, linewidth=2)
+    ax2.plot(time, velocity, label=label, color=color, linestyle='--', linewidth=1.5)
+
+# [...] (formattazione griglia, etichette e salvataggio dell'immagine PNG)
+\end{lstlisting}
+
+In questo modo, l'utente ottiene un quadro completo immediato, pulito ed esportabile per la stesura di \textit{paper} accademici o analisi prestazionali sui materiali della vela.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
