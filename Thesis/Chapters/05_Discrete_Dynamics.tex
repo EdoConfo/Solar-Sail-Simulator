@@ -1,0 +1,133 @@
+\chapter{Dinamica Discreta e Time Warp}
+\label{chap:dinamica_discreta}
+
+Tutte le operazioni descritte nel capitolo precedente, dal calcolo della gravità tramite \lstinline|UpdateGravityForce()| all'aggiornamento della spinta solare con \lstinline|UpdateSolarForce()|, devono essere effettuate continuamente per descrivere una traiettoria fluida nello spazio. All'interno dell'architettura di Unreal Engine, questo ciclo continuo è governato dalla funzione nativa \lstinline|Tick()|, che il motore grafico richiama automaticamente a ogni singolo fotogramma generato.
+
+Simulare un viaggio spaziale solleva però una sfida tecnica legata alla gestione del tempo. Un veicolo spaziale reale impiega molto tempo per compiere frazioni della propria orbita; eseguire una simulazione rigorosamente in "tempo reale" (dove un secondo nel simulatore equivale a un secondo reale) renderebbe l'analisi visiva della missione impossibile per l'utente. È quindi strettamente necessario introdurre un sistema di accelerazione temporale, comunemente definito \textit{Time Warp}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Il ciclo di simulazione e il limite del calcolo in tempo reale}
+
+Il cuore della gestione temporale risiede nella variabile \lstinline|DeltaTime|. Questo parametro, fornito nativamente dal motore grafico come argomento della funzione \lstinline|Tick()|, rappresenta il tempo fisico (in millisecondi) trascorso tra il completamento del fotogramma precedente e l'inizio di quello attuale. Per permettere all'utente di velocizzare la simulazione senza alterare il \textit{framerate} del programma, l'algoritmo moltiplica il \lstinline|DeltaTime| per una variabile globale denominata \lstinline|TimeScale|.
+
+Attraverso questa operazione matematica, il sistema scala il passaggio del tempo. Se la simulazione opera a 60 FPS, il \lstinline|DeltaTime| reale è di circa 0.016 secondi. Se l'utente imposta un \lstinline|TimeScale| di 10.000, il sistema elaborerà le forze comportandosi numericamente come se tra un frame e l'altro fossero trascorsi 160 secondi.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Criticità del componente Rigid Body in fase di Time Warp}
+
+La dilatazione temporale risolve il problema della durata del viaggio, ma ne introduce un secondo: il motore fisico nativo di Unreal Engine, progettato per simulare dinamiche terrestri a velocità umane, non è adeguato per la gestione forze e spostamenti che avvengono su scale temporali così estreme.
+Se una forza costante venisse applicata nativamente a un \textit{Rigid Body} utilizzando un \lstinline|DeltaTime| scalato troppo ampio, il motore fisico non sarebbe in grado di calcolare correttamente la nuova posizione e velocità del veicolo, portando a risultati imprecisi o addirittura a crash del programma.
+Tra un calcolo e il successivo, lo spazio percorso dal corpo risulterebbe enorme: invece di descrivere una curva orbitale fluida, la sonda procederebbe su lunghi segmenti retti, uscendo inesorabilmente dalla traiettoria teorica e violando il principio di conservazione dell'energia. In pochissimi secondi di simulazione, questa instabilità numerica porterebbe l'orbita ad "allargarsi" fino a sfuggire completamente alla gravità terrestre, con conseguente perdita di controllo totale sulla simulazione.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Lo Switch Architetturale}
+
+Per superare i limiti strutturali del motore fisico senza rinunciare alla precisione microscopica quando necessaria, l'algoritmo implementa uno "switch" dinamico all'inizio della funzione \lstinline|Tick()|. Questo meccanismo di controllo valuta in tempo reale se la simulazione sta operando a una velocità accettabile per il motore fisico o se è necessario passare a una modalità di calcolo completamente manuale, disabilitando temporaneamente il componente di simulazione fisica del veicolo.
+
+\begin{lstlisting}[language=C++, caption={Logica di switch tra simulazione fisica e cinematica manuale.}]
+bool bShouldBePhysics = (Manager->TimeScale <= 1.1f);
+bool bCurrentlyPhysics = SAIL_MESH->IsSimulatingPhysics();
+
+if (bShouldBePhysics && !bCurrentlyPhysics) {
+    // 1. Ritorno alla normalita': si riattiva il motore fisico
+    SAIL_MESH->SetSimulatePhysics(true);
+    SAIL_MESH->SetPhysicsLinearVelocity(FVector(SailVelocity * Manager->KM_TO_UU));
+    this->CustomTimeDilation = Manager->TimeScale; 
+}
+else if (!bShouldBePhysics && bCurrentlyPhysics) {
+    // 2. Ingresso in Time Warp: si disattiva il motore fisico
+    SailVelocity = FVector3d(SAIL_MESH->GetPhysicsLinearVelocity()) * Manager->UU_TO_KM;
+    SAIL_MESH->SetSimulatePhysics(false);
+    this->CustomTimeDilation = 1.0f; 
+}
+\end{lstlisting}
+
+La soglia di transizione è impostata al valore di $1.1$, che rappresenta il limite di sicurezza prima che la fisica di base inizi a degradare. Finché il moltiplicatore temporale rimane entro questo margine, il veicolo delega il calcolo del moto al solutore nativo tramite l'istruzione \lstinline|SetSimulatePhysics(true)|. In questa fase, la variabile \lstinline|CustomTimeDilation| dell'attore viene mantenuta sincronizzata con il \lstinline|TimeScale|. In questo modo il motore fisico scala correttamente tutte le forze e i movimenti, mantenendo la coerenza della simulazione anche quando l'utente decide di rallentare o accelerare il tempo in modo moderato.
+
+Nel momento in cui l'utente supera la soglia di sicurezza, il codice esegue il passaggio inverso. L'algoritmo salva l'ultima velocità registrata, disattiva il motore di collisione tramite \lstinline|SetSimulatePhysics(false)| e imposta il tempo locale della vela a $1.0$. Questa operazione "congela" l'attore dal punto di vista del motore di gioco, consentendo al codice di assumere il pieno controllo sulla posizione e sull'orientamento della sonda senza interferenze esterne. Da questo momento in poi, ogni calcolo di forza, accelerazione e spostamento viene eseguito manualmente all'interno del ciclo \lstinline|Tick()|, garantendo una precisione assoluta anche a moltiplicatori di tempo estremi.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Integrazione numerica della traiettoria tramite il Metodo di Eulero}
+
+Durante la fase di \textit{Time Warp}, la posizione tridimensionale della vela deve essere calcolata, fotogramma dopo fotogramma, a partire dalle forze totali che agiscono su di essa.
+Avendo calcolato la forza totale (somma vettoriale della gravità terrestre e della spinta solare) nei passaggi precedenti, il \lstinline|Tick()| applica un solutore cinematico basato sul metodo di Eulero, chiamato \textbf{Integrazione di Eulero semi-implicita}
+Tale metodo rappresenta una delle tecniche più semplici e dirette per integrare numericamente le equazioni del moto.
+
+Questo algoritmo traduce la forza applicata in uno spostamento tridimensionale, elaborando i dati in tre fasi consecutive direttamente all'interno dell'istruzione \lstinline|else| del blocco di switch:
+
+\begin{lstlisting}[language=C++, caption={Implementazione del solutore cinematico basato sul metodo di Eulero.}]
+double SimulationDeltaTime = DeltaTime * Manager->TimeScale;
+
+// 1. Calcolo dell'accelerazione (a = F/m)
+FVector3d AccelMetersS2 = TotalForce / SAIL_MASS;
+FVector3d AccelKmS2 = AccelMetersS2 / 1000.0;
+
+// 2. Integrazione della Velocita' (V = V0 + a*dt)
+SailVelocity += AccelKmS2 * SimulationDeltaTime;
+
+// 3. Integrazione della Posizione (P = P0 + V*dt) e spostamento
+FVector3d DisplacementKm = SailVelocity * SimulationDeltaTime;
+FVector3d DisplacementUU = DisplacementKm * Manager->KM_TO_UU;
+
+FVector3d NewPosition = SailPosition + DisplacementUU;
+SetActorLocation(FVector(NewPosition));
+\end{lstlisting}
+
+La logica matematica implementata rispetta la rigida gerarchia della meccanica newtoniana, procedendo per tre "gradini" logici che trasformano una forza invisibile in uno spostamento concreto sulla griglia spaziale:
+
+\begin{itemize}
+    \item \textbf{Accelerazione:} Sfruttando il secondo principio della dinamica ($F = m \cdot a$), il vettore della forza totale espressa in Newton viene diviso per la massa della vela espressa in chilogrammi (\lstinline|SAIL_MASS|). Il risultato, che rappresenta un'accelerazione in $m/s^2$, viene immediatamente diviso per $1000$ in modo da ottenere un valore coerente con il sistema di riferimento spaziale ($Km/s^2$).
+    
+    $$ \vec{a} = \frac{\vec{F}_{tot}}{m} $$
+    
+    \item \textbf{Velocità:} Viene applicata la prima iterazione numerica. La nuova velocità orbitale si ottiene sommando la velocità posseduta nel fotogramma precedente con il prodotto tra l'accelerazione ricavata al passaggio precedente e il tempo scalato (\lstinline|SimulationDeltaTime|).
+    
+    $$ \vec{v}_{new} = \vec{v}_{old} + (\vec{a} \cdot \Delta t) $$
+    
+    \item \textbf{Spostamento:} Eseguita la seconda iterazione, il vettore velocità viene moltiplicato per il tempo, restituendo la quantità effettiva di chilometri percorsi dalla sonda durante quel singolo fotogramma (\lstinline|DisplacementKm|).
+    
+    $$ \vec{x}_{new} = \vec{x}_{old} + (\vec{v}_{new} \cdot \Delta t) $$
+\end{itemize}
+
+Ottenute le nuove coordinate nello spazio tridimensionale, il dato viene convertito in \textit{Unreal Units} e la funzione nativa \lstinline|SetActorLocation()| viene utilizzata per spostare forzatamente, e in modo istantaneo, il modello 3D della vela. 
+Sostituendo il simulatore fisico continuo con questo approccio matematico discreto, il software è in grado di gestire moltiplicatori di tempo estremi mantenendo la precisione e la coerenza della traiettoria, senza incorrere in errori di calcolo o instabilità numeriche che avrebbero inevitabilmente portato a risultati errati o a crash del programma.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Aggiornamento indipendente dell'assetto}
+
+Il comportamento spaziale della vela non si limita alla semplice traslazione lungo l'orbita. Durante il volo, il veicolo deve ruotare costantemente su sé stesso affinché la sua traiettoria risulti visivamente realistica, simulando la conservazione del momento angolare di un oggetto lanciato nel vuoto. 
+
+Essendo il motore fisico disabilitato durante l'accelerazione temporale, la rotazione non può essere calcolata tramite l'applicazione di forze di torsione. Il codice gestisce quindi l'orientamento della sonda attraverso la funzione \lstinline|UpdateSailRotation()|, che viene richiamata indipendentemente dalla modalità fisica o cinematica attualmente in uso.
+
+L'obiettivo della funzione è quello di vincolare e mantenere allineato l'asse verticale della sonda (l'asse Z, ovvero il vettore "Up") alla direzione del vettore velocità (\lstinline|SailVelocity|). In questo modo, la sonda espone sempre la sua faccia frontale rispetto alla direzione del moto.
+
+\begin{lstlisting}[language=C++, caption={Allineamento dell'assetto tramite Quaternioni in \lstinline|SolarSail.cpp|.}]
+FVector CurrentZ = GetActorUpVector(); 
+FVector TargetVel = (FVector)VelocityDir; 
+
+// Calcolo della rotazione differenziale necessaria
+FQuat DeltaRot = FQuat::FindBetweenNormals(CurrentZ, TargetOrientation);
+FQuat TargetQuat = DeltaRot * GetActorQuat();
+
+// Interpolazione sferica (Slerp) per una rotazione fluida
+FQuat NewQuat = FQuat::Slerp(GetActorQuat(), TargetQuat, 2.0f * DeltaTime);
+SetActorRotation(NewQuat);
+\end{lstlisting}
+
+Per prevenire rotazioni "a scatti" o vibrazioni visive (che risulterebbero molto evidenti durante i rapidi cambi di direzione orbitale), il sistema evita di imporre la rotazione finale in un unico passaggio. Si affida invece all'interpolazione sferica lineare (\lstinline|Slerp|) applicata ai Quaternioni.
+
+Dal punto di vista pratico, lo \lstinline|Slerp| agisce come un ammortizzatore matematico: invece di "teletrasportare" la vela istantaneamente verso il nuovo angolo, il sistema calcola il percorso più breve tra l'orientamento attuale e quello desiderato, muovendo la sonda solo di una piccola frazione ad ogni frame.
+
+L'inserimento del \lstinline|DeltaTime| in questo calcolo è il dettaglio tecnico che garantisce la stabilità del software: assicura che la velocità di rotazione rimanga costante e fluida indipendentemente dal framerate del computer o dal \lstinline|TimeScale| impostato. In questo modo, anche durante le fasi di accelerazione temporale più estreme, la sonda mantiene un comportamento visivo coerente e realistico, evitando movimenti bruschi o imprevisti che comprometterebbero l'esperienza utente e la credibilità della simulazione.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
