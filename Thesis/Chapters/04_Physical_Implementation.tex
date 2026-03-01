@@ -1,0 +1,747 @@
+\chapter{Implementazione Fisica}
+\label{chap:implementazione_fisica}
+
+Dopo aver descritto nel capitolo precedente l'architettura del software, in questa sezione viene analizzata la logica fisica che permette al simulatore di funzionare. Se il capitolo precedente si è occupato della "struttura" del programma, questo si concentra su come le leggi fisiche vengano tradotte in algoritmi veri e propri. L’obiettivo principale è trasformare i modelli teorici presentati nel Capitolo 2 in istruzioni che il computer possa eseguire in tempo reale.
+
+In questo contesto, Unreal Engine non viene utilizzato solo come motore grafico, ma come un vero e proprio solutore numerico. Il sistema deve infatti calcolare ogni forza agente sulla vela solare, dalla gravità terrestre alla spinta dei fotoni solari, per ottenere la forza totale che ne determina il movimento. Nelle sezioni che seguono verrà descritto l'intero schema di calcolo: dalla gestione delle unità di misura e delle condizioni iniziali, fino all'uso del \textit{ray casting} per simulare l'impatto della luce sulla superficie della vela.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Dimensioni di riferimento}
+
+Sviluppare un simulatore spaziale all'interno di Unreal Engine 5 richiede di superare un ostacolo tecnico importante: adattare un motore nato per i videogiochi a calcoli scientifici di alta precisione. Nativamente, infatti, la struttura di Unreal è pensata per gestire distanze e movimenti su scala "umana", dove tutto si misura in metri e centimetri.
+
+Nello spazio profondo, al contrario, le distanze sono enormi. Il movimento di una sonda spaziale non può essere calcolato come quello di un normale personaggio 3D: a distanze astronomiche, gli errori di arrotondamento del computer si accumulerebbero a ogni singolo fotogramma (\textit{Tick}), compromettendo l'orbita in pochissimo tempo e portando all'alterazione della simulazione o al suo diretto fallimento. Per risolvere questo problema, il simulatore esegue i calcoli fisici "dietro le quinte", in cui le unità di misura vengono ricalibrate appositamente per le distanze interplanetarie.
+
+\subsection{Il sistema di riferimento del simulatore}
+
+In astrodinamica, le traiettorie vengono sempre calcolate prendendo come ancoraggio il corpo celeste principale attorno a cui si orbita. Poiché il simulatore è progettato per ancorare le vele solari alla Terra, l'architettura software adotta nativamente un sistema di riferimento geocentrico. Per tradurre questo concetto all'interno di Unreal Engine, il centro di massa della Terra viene fatto coincidere con l'origine tridimensionale del livello virtuale. Come definito all'interno della classe \lstinline|ASimulationManager|, la variabile \lstinline|EARTH_POSITION| è impostata alle coordinate $(0.0, 0.0, 0.0)$:
+
+\begin{lstlisting}[language=C++, caption={Definizione delle coordinate centrali in \lstinline|SimulationManager.h|.}]
+UPROPERTY(VisibleAnywhere, 
+        Category = "Simulation Parameters | Bodies | Earth")
+FVector3d EARTH_POSITION = FVector3d(0.0, 0.0, 0.0);
+
+UPROPERTY(VisibleAnywhere,
+        Category = "Simulation Parameters | Bodies | Sun")
+FVector3d SUN_POSITION = FVector3d(149597870.7, 0.0, 0.0);
+\end{lstlisting}
+
+Questa configurazione crea un sistema di riferimento inerziale geocentrico. Il Sole viene invece posizionato lungo l'asse X alla sua distanza astronomica reale (circa 149 milioni di chilometri).
+
+È importante precisare che posizionare la Terra esattamente al centro dell'universo virtuale è una scelta dettata da pura comodità logica e visiva. Il codice non è affatto vincolato in modo rigido all'origine del mondo: poiché l'intera architettura matematica è basata sul calcolo di vettori relativi (come la distanza tra la vela e \lstinline|EARTH_POSITION|), se al variare delle necessità di progetto si decidesse di spostare la Terra in un altro punto dello spazio, basterebbe aggiornarne le coordinate. Di conseguenza, tutti gli altri corpi coinvolti slitterebbero in modo coerente, mantenendo intatte le proporzioni e le leggi fisiche della simulazione.
+
+\subsection{Scale astronomiche e necessità della doppia precisione}
+
+Un motore grafico ragiona nativamente tramite unità di misura generiche definite "Unreal Units" (UU). Mantenere questa metrica anche per lo spazio profondo significherebbe costringere il calcolatore a gestire valori estremamente grandi, portando in breve tempo a errori di arrotondamento e alla perdita di stabilità dell'ambiente virtuale.
+
+Per ovviare a questo ostacolo, all'interno del \lstinline|SimulationManager| è stata adottata una specifica convenzione di scala spaziale. Il sistema ricalibra le grandezze stabilendo che un chilometro di distanza nello spazio simulato corrisponda esattamente a 1000 unità del motore grafico:
+
+\begin{lstlisting}[language=C++, caption={Fattori di scala per le distanze astronomiche in \lstinline|SimulationManager.h|.}]
+UPROPERTY(VisibleAnywhere,
+            Category = "Simulation Parameters | Unit Conversions")
+float KM_TO_UU = 1000.0f;
+
+UPROPERTY(VisibleAnywhere,
+            Category = "Simulation Parameters | Unit Conversions")
+float UU_TO_KM = 0.001f;
+\end{lstlisting}
+
+Attraverso questa proporzione, posizionare un satellite in orbita LEO a 400 km di quota si traduce in uno spostamento di 400.000 UU dal centro della terra, un valore numerico che il sistema è in grado di gestire in modo ottimale. 
+
+Tuttavia, la sola gestione della scala spaziale non è sufficiente a garantire la stabilità orbitale. I vettori a singola precisione (\lstinline|float| a 32 bit) nativi del motore non sono in grado di identificare accuratamente variazioni millimetriche quando un corpo si trova a distanze di scala astronomica. Per far in modo di evitare eventuali deviazioni di traiettoria o errori di arrotondamento, l'intero sistema matematico del simulatore è basato su \lstinline|FVector3d|. L'implementazione della doppia precisione (\lstinline|double| a 64 bit) per le variabili di posizione rappresenta il requisito fondamentale e obbligatorio per operare in modo affidabile su distanze così grandi.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Inizializzazione delle condizioni di partenza}
+
+Affinché il solutore numerico possa calcolare correttamente l'evoluzione della traiettoria, è necessario definire con precisione lo stato fisico iniziale del veicolo al tempo zero ($t=0$). Questa fase preparatoria viene gestita dalla classe \lstinline|ASolarSail| attraverso una sequenza di funzioni di inizializzazione che si avviano automaticamente all'avvio della simulazione, all'interno dell'evento \lstinline|BeginPlay()|.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Collegamento al gestore globale}
+
+La prima operazione è la funzione \lstinline|InitializeManager()|. Prima ancora di leggere la propria massa o posizione, la vela deve necessariamente agganciarsi all'istanza \textit{Singleton} del \lstinline|SimulationManager|; senza questo collegamento, la vela non avrebbe accesso alle costanti universali (come la massa della Terra o il fattore di scala \lstinline|KM_TO_UU|) e qualsiasi calcolo successivo genererebbe un errore. Una volta stabilito questo ponte comunicativo, è possibile procedere con il caricamento dei parametri fisici.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Parametrizzazione strutturale del veicolo}
+
+Prima di poter elaborare qualsiasi forza attiva, il sistema deve caricare in memoria le proprietà fisiche e geometriche della vela. Questa operazione è delegata alla funzione \lstinline|InitializePhysicsProperties()|. I parametri fondamentali estratti dal pannello di controllo dell'utente sono due:
+
+\begin{itemize}
+    \item \textbf{Massa del veicolo ($m$):} Valore espresso in chilogrammi, essenziale per derivare l'accelerazione a partire dalla forza totale applicata, secondo il secondo principio della dinamica ($a = F/m$).
+    \item \textbf{Area della vela ($A$):} Valore espresso in metri quadrati, che determina l'ampiezza della superficie esposta al flusso di fotoni. Maggiore è l'area, superiore sarà la spinta fotonica raccolta dal sistema.
+\end{itemize}
+
+Questi parametri, prelevati dall'interfaccia utente, vengono applicati direttamente al componente \lstinline|UStaticMeshComponent| (\lstinline|SAIL_MESH|), il quale rappresenta fisicamente la vela. In questo modo, l'algoritmo sovrascrive le impostazioni di default del motore per imporre i valori esatti richiesti dal modello matematico desiderato.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Collocamento geometrico e configurazione dell'orbita}
+
+Una volta definita la struttura della vela, l'algoritmo deve posizionarla nello spazio. Questa operazione non si limita ad assegnare un semplice raggio orbitale predefinito, ma richiede di collocare il veicolo in un punto esatto lungo un'orbita tridimensionale. La funzione \lstinline|SetInitialPositions()| gestisce questa necessità unendo i parametri numerici della missione con il posizionamento spaziale stabilito visivamente nell'editor.
+
+Per agevolare la configurazione rapida, il sistema usa un \lstinline|enum| (\lstinline|EOrbitStartType|) contenente i preset delle altitudini orbitali più comuni (come l'orbita LEO a 400 km o quella geostazionaria).
+
+\begin{lstlisting}[language=C++, caption={Enumerazione dei preset orbitali nel file \lstinline|SolarSail.h|.}]
+UENUM(BlueprintType)
+enum class EOrbitStartType : uint8 {
+    LEO_ISS       UMETA(DisplayName = "LEO (Stazione Spaziale - 400km)"),
+    MEO_GPS       UMETA(DisplayName = "MEO (GPS - 20.200km)"),
+    Geostationary UMETA(DisplayName = "GEO (Geostazionaria - 35.786km)"),
+    LunarDistance UMETA(DisplayName = "Distanza Lunare (384.400km)"),
+    CustomAltitude UMETA(DisplayName = "Altitudine Personalizzata")
+};
+\end{lstlisting}
+
+Il sistema, tuttavia, non forza la comparsa della vela su un asse cartesiano predefinito. Al contrario, il codice rileva le coordinate in cui l'utente ha posizionato manualmente la vela all'interno della scena di Unreal (\lstinline|EditorLocation|) e calcola un versore (\lstinline|RadialDir|) che parte dal centro della Terra e punta esattamente in quella direzione. 
+
+\begin{lstlisting}[language=C++, caption={Calcolo della posizione e della distanza radiale in \lstinline|SolarSail.cpp|.}]
+FVector3d EditorLocation = FVector3d(GetActorLocation()); 
+FVector3d EarthPosUU = Manager->EARTH_POSITION * Manager->KM_TO_UU;
+
+// Calcolo della direzione in base al posizionamento nell'editor
+FVector3d RadialDir = (EditorLocation - EarthPosUU).GetSafeNormal();
+
+// Controllo di sicurezza per evitare vettori nulli
+if (RadialDir.IsNearlyZero()) {
+    RadialDir = FVector3d(1, 0, 0); 
+}
+\end{lstlisting}
+
+Una volta stabilita la direzione, l'algoritmo estrae l'altitudine richiesta dal valore scelto dall'utente nell editor e vi somma il raggio equatoriale terrestre, ottenendo la distanza radiale reale dal centro di massa del pianeta. Questo valore viene convertito nelle unità di misura del motore grafico (\lstinline|TargetOrbitRadiusUU|) e moltiplicato per il versore direzionale. 
+
+\begin{lstlisting} [language=C++, caption={Calcolo del raggio orbitale in \lstinline|SolarSail.cpp|.}]
+double TargetOrbitRadiusKm = SelectedAltitudeKm + Manager->EARTH_RADIUS;
+double TargetOrbitRadiusUU = TargetOrbitRadiusKm * Manager->KM_TO_UU;
+FVector3d NewLocationUU = EarthPosUU + (RadialDir * TargetOrbitRadiusUU);
+\end{lstlisting}
+
+A questo punto, il calcolo matematico deve essere tradotto in un'azione all'interno dell'ambiente virtuale di Unreal. Tramite l'istruzione \lstinline|SetActorLocation()|, il software sposta fisicamente il modello 3D della vela alle nuove coordinate appena ottenute (\lstinline|NewLocationUU|). Contemporaneamente, le variabili di stato che rappresentano la posizione della vela e la distanza dal centro della Terra vengono aggiornate con i nuovi valori:
+
+\begin{lstlisting}[language=C++, caption={Assegnazione delle coordinate e delle variabili di stato in \lstinline|SolarSail.cpp|.}]
+// Spostamento fisico dell'attore nella scena
+SetActorLocation(FVector(NewLocationUU));
+
+// Inizializzazione delle variabili per il solutore fisico
+SailPosition = NewLocationUU; 
+OrbitRadius = TargetOrbitRadiusKm;
+SailDistanceFromEarth = OrbitRadius;
+\end{lstlisting}
+
+Conservare in memoria questi valori (in particolar modo \lstinline|SailDistanceFromEarth|) è fondamentale: senza di essi, infatti, il motore fisico non avrebbe i dati di partenza per poter calcolare la forza gravitazionale e la spinta solare nel momento di inizio della simulazione.
+
+Più semplicemente, l'algoritmo non stravolge la scena costruita dall'utente, ma la regolarizza. Il sistema guarda in che direzione è stata piazzata la vela nell'editor e si limita a "spingerla" lungo quella linea immaginaria, allontanandola, o avvicinandola, finché non raggiunge l'altitudine impostata. 
+
+È stato inoltre inserito un meccanismo di emergenza: se per errore la vela venisse posizionata al centro della Terra (coordinate $0.0, 0.0, 0.0)$, il software non saprebbe in quale direzione allontanarla, poiché la distanza risulterebbe zero. Per evitare che questo errore matematico faccia andare in \textit{crash} il programma, l'algoritmo sposta la vela lungo l'asse X, garantendo un avvio sicuro della simulazione.
+
+\begin{lstlisting}[language=C++, caption={Meccanismo di sicurezza per posizionamento errato in \lstinline|SolarSail.cpp|.}]
+if (RadialDir.IsNearlyZero()) {
+    RadialDir = FVector3d(1, 0, 0); 
+}
+\end{lstlisting}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Correzione dell'assetto e allineamento orbitale}
+
+Posizionare la vela alla giusta distanza dalla Terra non basta. Affinché un'orbita circolare sia stabile sin dal primo istante, la spinta iniziale deve essere rigorosamente perpendicolare all'attrazione gravitazionale (ovvero a 90 gradi rispetto al raggio che unisce la vela al centro del pianeta). 
+
+Poiché il simulatore permette all'utente di orientare liberamente la vela nell'editor grafico prima dell'avvio, è altamente probabile che la direzione scelta manualmente non sia una tangente perfetta. Anche un errore umano di frazioni di grado nell'inclinazione del modello 3D comporterebbe una componente di velocità radiale indesiderata, trasformando l'orbita circolare in un'ellisse o, nel peggiore dei casi, portando la vela a schiantarsi.
+
+Per prevenire questo problema, prima di applicare qualsiasi forza, il sistema esegue la funzione \lstinline|SetInitialRotations()|, che si occupa di "raddrizzare" l'assetto del veicolo. L'algoritmo confronta la direzione verticale della vela (l'asse Z, scelto dall'utente) con la direzione radiale esatta della gravità terrestre (\lstinline|RadialDir|). Tramite un prodotto scalare (\lstinline|DotProduct|), il sistema calcola la porzione del vettore utente che sta accidentalmente puntando verso o contro la Terra, e la sottrae dal vettore originale:
+
+\begin{lstlisting}[language=C++, caption={Correzione vettoriale della rotazione iniziale in \texttt{SolarSail.cpp}.}]
+// Estrazione asse Z impostato dall'utente
+FVector3d UserForward = FVector3d(GetActorUpVector());
+
+// Calcolo della componente errata lungo il raggio e sua sottrazione
+double RadialComponent = FVector3d::DotProduct(UserForward, RadialDir);
+FVector3d ValidTangentDir = UserForward - (RadialDir * RadialComponent);
+\end{lstlisting}
+
+Il risultato, \lstinline|ValidTangentDir|, è un vettore puramente tangenziale all'orbita. A questo punto, il codice ricostruisce la matrice di rotazione dell'oggetto (\lstinline|FRotationMatrix::MakeFromZX|) e costringe il modello 3D della vela a ruotare (\lstinline|SetActorRotation|), allineando in modo impeccabile il suo asse Z alla nuova tangente calcolata. 
+
+\begin{lstlisting}[language=C++, caption={Allineamento dell'assetto alla tangente orbitale in \texttt{SolarSail.cpp}.}]
+FRotator NewRotation = FRotationMatrix::MakeFromZX((FVector)ValidTangentDir, (FVector)UserUpRef).Rotator();
+    
+SetActorRotation(NewRotation);
+\end{lstlisting}
+
+Anche in questo caso è previsto un meccanismo di sicurezza: se la vela fosse stata orientata dall'utente esattamente verso il centro della Terra, la sottrazione genererebbe un vettore nullo. In tal caso il sistema sceglie arbitrariamente di allineare la vela lungo l'asse X, garantendo comunque un assetto tangenziale corretto e un avvio stabile della simulazione.
+
+\begin{lstlisting}[language=C++, caption={Meccanismo di sicurezza per assetto errato in \texttt{SolarSail.cpp}.}]
+if (ValidTangentDir.IsNearlyZero()) {
+    ValidTangentDir = FVector3d::CrossProduct(RadialDir, 
+                                              FVector3d(1, 0, 0));
+    if (ValidTangentDir.IsNearlyZero()) {
+        ValidTangentDir = FVector3d(0, 1, 0);
+    }
+}
+\end{lstlisting}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Calcolo e attribuzione della velocità orbitale iniziale}
+
+Ancora una volta le modifiche strutturali applicate alla vela non sono sufficienti. Se la vela venisse semplicemente "rilasciata" in orbita con velocità nulla, l'attrazione gravitazionale terrestre la farebbe precipitare verso il centro del pianeta al primo istante di simulazione. Per mantenere la vela in un'orbita stabile, è indispensabile conferirle una velocità di lancio iniziale, in modo che la forza centrifuga bilanci l'attrazione gravitazionale.
+
+Questa operazione viene eseguita dalla funzione \lstinline|SetInitialVelocity()|. L'algoritmo calcola innanzitutto il modulo (l'intensità) della velocità necessaria, sfruttando la formula classica della meccanica orbitale:
+
+\begin{equation}
+    v = \sqrt{\frac{G \cdot M}{r}}
+\end{equation}
+
+Dove:
+\begin{itemize}
+    \item $G$ è la costante di gravitazione universale, definita come \lstinline|GRAVITATIONAL_CONSTANT|.
+    \item $M$ è la massa della Terra, definita come \lstinline|EARTH_MASS|.
+    \item $r$ è la distanza radiale della vela dal centro della Terra, convertita in metri e ottenuta dalla variabile \lstinline|SailDistanceFromEarth|, precedentemente calcolata durante l'inizializzazione della posizione.
+\end{itemize}
+
+Tuttavia, il motore fisico di Unreal Engine richiede un vettore direzionale tridimensionale, non un semplice numero scalare. Essendo l'assetto della vela appena stato corretto e forzato sulla tangente orbitale (come descritto nel paragrafo precedente tramite la funzione \lstinline|SetInitialRotation()|), l'algoritmo non ha bisogno di eseguire ulteriori calcoli per stabilire la direzione in cui deve essere applicata la velocità orbitale iniziale. La direzione di lancio viene semplicemente estratta dall'asse verticale (l'asse Z locale, o "Up Vector") dell'attore tramite l'istruzione \lstinline|GetActorUpVector()|. 
+
+Una volta ottenuto questo versore direzionale il sistema lo moltiplica per il modulo \lstinline|InitialOrbitVelocityModule| calcolato in precedenza per ottenere così il vettore della velocità iniziale.
+
+Infine, tramite la funzione \lstinline|SetPhysicsLinearVelocity()|, la velocità calcolata viene passata direttamente al motore fisico di Unreal, imprimendo alla sonda la spinta meccanica reale per farla partire. In questo modo, l'oggetto entra a far parte a tutti gli effetti del sistema dinamico gestito dal motore.
+
+\begin{lstlisting}[language=C++, caption={Calcolo e assegnazione della velocità orbitale iniziale in \lstinline|SolarSail.cpp|.}]
+// Calcolo della distanza in metri con soglia di sicurezza
+double Dist = FVector3d::Distance(CurrentPos, EarthPosUU) * Manager->UU_TO_METERS;
+if (Dist < 1000.0) {
+    Dist = 1000.0;
+}
+
+// Calcolo del modulo della velocita' orbitale
+InitialOrbitVelocityModule = FMath::Sqrt((Manager->GRAVITATIONAL_CONSTANT * Manager->EARTH_MASS) / Dist);
+
+// Estrazione della direzione di lancio
+InitialOrbitVelocityVersor = FVector3d(GetActorUpVector());
+
+// Calcolo del vettore finale
+InitialOrbitVelocity = InitialOrbitVelocityVersor * InitialOrbitVelocityModule;
+
+// Assegnazione della velocita' al motore fisico di Unreal
+if(SAIL_MESH->IsSimulatingPhysics()) {
+    SAIL_MESH->SetPhysicsLinearVelocity(FVector(InitialOrbitVelocity));
+}
+\end{lstlisting}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Inizializzazione della telemetria e delle condizioni di partenza}
+
+Dopo aver posizionato la vela, averne corretto l'assetto e averle conferito la giusta velocità iniziale, la vela è fisicamente pronta per iniziare a orbitare. L'ultima istruzione eseguita dal \lstinline|BeginPlay()| non riguarda la dinamica della vela, ma la preparazione al salvataggio dei dati persistenti.
+
+Qualora l'utente abbia abilitato la registrazione dei dati, l'esecuzione della funzione \lstinline|InitializeCSVReporting()| prepara il terreno per l'analisi della missione. In questa fase il sistema non elabora ancora alcuna dinamica, ma prepara l'ambiente di lavoro sul disco, creando le cartelle di destinazione e generando un file univoco per la vela (ad esempio \textit{SolarSailData\_Sail\_1.csv}). Il vero pregio di questa impostazione è la sua scalabilità nativa: se la simulazione prevede il lancio simultaneo di un'intera flotta di vele, il codice lo rileva e inizializza in automatico un file di telemetria dedicato per ogni singolo veicolo.
+
+In questa fase il sistema si limita a preparare i file e a resettare i flag di scrittura (\lstinline|bCsvHeaderWritten|); la vera registrazione dei parametri fisici iniziali e la scrittura dell'intestazione (\textit{header}) avverranno in automatico durante la prima chiamata della funzione \lstinline|AppendDataToCSV| al primo frame utile della simulazione. Lo schema di salvataggio dei dati persistenti e l'analisi della telemetria di debug verranno approfonditi nel Capitolo 5.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Modellazione della gravità terrestre}
+
+Conclusa la fase di inizializzazione, il simulatore entra nel suo ciclo vitale: l'aggiornamento continuo a ogni fotogramma (\textit{Tick}). Da questo momento in poi, il moto della vela non è più un semplice parametro preimpostato, ma è governato dall'interazione dinamica delle forze in gioco. La più importante e costante di queste è senza dubbio l'attrazione gravitazionale terrestre.
+
+Per mantenere l'architettura del software pulita ed efficiente, l'elaborazione di questa dinamica è stata suddivisa in due passaggi logici: il calcolo matematico (affidato al sistema centrale \lstinline|SimulationManager|) e l'applicazione meccanica (gestita dal singolo veicolo \lstinline|SolarSail|).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Calcolo vettoriale dell'accelerazione di gravità}
+
+La funzione \lstinline|GetEarthGravityAccelerationAt()|, contenuta nel \lstinline|SimulationManager|, funge da calcolatrice universale per l'intero sistema. Il suo scopo è determinare l'esatta accelerazione di gravità in un qualsiasi punto dello spazio virtuale.
+
+L'algoritmo parte dalla formulazione classica della legge di gravitazione universale di Newton, riadattata per trovare l'accelerazione ($g$):
+
+\begin{equation}
+g = \frac{G \cdot M}{r^2}
+\end{equation}
+
+Dove:
+\begin{itemize}
+    \item $G$ è la costante di gravitazione universale, definita come \lstinline|GRAVITATIONAL_CONSTANT| e convertita in metri cubi al secondo quadrato per chilogrammo.
+    \item $M$ è la massa della Terra, definita come \lstinline|EARTH_MASS| e anch'essa espressa in chilogrammi.
+    \item $r$ è la distanza radiale della vela dal centro della Terra, espressa in metri e calcolata a partire dalla distanza in chilometri (\lstinline|DistanceFromEarthKm|) fornita come parametro di ingresso alla funzione.
+\end{itemize}
+
+Prima di eseguire il calcolo, il codice converte la distanza dal centro della Terra ($r$) in metri, un passaggio obbligatorio poiché la costante gravitazionale $G$ opera su questa specifica unità di misura. Ottenuto quindi il modulo dell'accelerazione (\lstinline|GravityAccelerationMagnitude|), il sistema necessita di un versore per orientare la forza nel mondo tridimensionale di Unreal Engine. 
+
+L'algoritmo genera quindi un vettore direzionale normalizzato (\lstinline|DirectionToEarth|) che parte dalla posizione della sonda e punta dritto verso le coordinate terrestri. Moltiplicando questo versore per il modulo $g$, si ottiene il risultato finale: un vettore tridimensionale che indica al motore grafico non solo l'intensità dell'attrazione gravitazionale, ma anche la direzione verso la quale la vele viene attratta.
+
+\begin{lstlisting}[language=C++, caption={Calcolo dell'accelerazione gravitazionale in \texttt{SimulationManager.cpp}.}]
+double DistanceFromEarthM = DistanceFromEarthKm * 1000.0;
+
+// Calcolo del modulo dell'accelerazione (g = GM/r^2)
+double GravityAccelerationMagnitude = (GRAVITATIONAL_CONSTANT * EARTH_MASS) / (DistanceFromEarthM * DistanceFromEarthM);
+
+// Vettore direzionale verso la Terra
+FVector3d DirectionToEarth = (EARTH_POSITION - (SailLocationUU * UU_TO_KM)).GetSafeNormal();
+
+return DirectionToEarth * GravityAccelerationMagnitude;
+\end{lstlisting}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Applicazione della forza e aggiornamento dinamico}
+
+Mentre il Manager si occupa della teoria matematica, la classe \lstinline|ASolarSail| deve tradurre quei calcoli in vero movimento. Ad ogni singolo \textit{tick}, la vela richiama la funzione \lstinline|UpdateGravityForce()|. 
+
+La specifica vela consulta il Manager (\lstinline|SimulationManager|) passandogli la propria posizione e ottiene in risposta il vettore dell'accelerazione appena calcolato. Applicando il secondo principio della dinamica ($F = m \cdot a$), l'algoritmo lo moltiplica per la massa del veicolo (\lstinline|SAIL_MASS|), ricavando la forza gravitazionale vera e propria, espressa in Newton.
+
+A questo punto, la forza viene inserita nel motore fisico di Unreal tramite la funzione nativa \lstinline|AddForce()|.
+Mentre la velocità di lancio è stata assegnata una sola volta come valore iniziale, \lstinline|AddForce| esercita un'attrazione ininterrotta. Ad ogni \textit{tick}, questa istruzione attira la sonda verso il centro del pianeta, agendo come forza centripeta per bilanciare l'inerzia del veicolo e mantenerlo costantemente vincolato alla sua orbitale.
+
+\begin{lstlisting}[language=C++, caption={Applicazione dinamica della forza gravitazionale in \lstinline|SolarSail.cpp|.}]
+// Richiesta dell'accelerazione al Manager
+FVector3d GravityAccel = Manager->GetEarthGravityAccelerationAt(SailPosition, SailDistanceFromEarth);
+
+// F = m * a
+GravityForce = GravityAccel * SAIL_MASS;
+
+// Applicazione continua della forza al motore fisico (se nei limiti di tempo)
+if(Manager->TimeScale <= 1.1f) {
+    if(SAIL_MESH->IsSimulatingPhysics()) {
+        SAIL_MESH->AddForce(FVector(GravityForce));
+    }
+}
+\end{lstlisting}
+
+È importante sottolineare un limite di sicurezza fondamentale imposto in questa funzione: l'uso del comando nativo \lstinline|AddForce| è consentito solo se il tempo scorre a velocità quasi reale (\lstinline|TimeScale <= 1.1f|). I motori fisici, come \textit{Chaos Physics} per Unreal Engine, calcolano il movimento per ogni fotogramma. Se l'utente accelerasse la simulazione in modo estremo, lo spazio percorso dalla sonda tra un calcolo e l'altro diventerebbe troppo ampio: invece di descrivere una curva orbitale fluida, il veicolo procederebbe su lunghe rette, finendo per 'allargare' inesorabilmente la traiettoria e fuggire dall'orbita. Per evitare questo grave errore matematico, la fisica di Unreal viene sfruttata solo quando la densità dei calcoli garantisce una simulazione stabile.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Il Campo di Pressione Solare (SRP)}
+
+Accanto all'attrazione gravitazionale, la seconda componente fondamentale per la simulazione è la Pressione di Radiazione Solare (\textit{Solar Radiation Pressure}). Al contrario della gravità, che agisce sul centro di massa del veicolo, la pressione solare è una forza che agisce su tutta la superficie della vela ed è generata dall'impatto dei fotoni contro di essa. 
+
+Mantenendo la coerenza strutturale definita al paragrafo precedente, anche il calcolo di questa interazione è stato separato in due parti logiche distinte: il calcolo della pressione di radiazione vera e propria (gestita centralmente dal \lstinline|SimulationManager|) e il calcolo della forza risultante sull'oggetto (delegata invece a \lstinline|SolarSail|).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Calcolo della distanza Vela-Sole}
+
+L'intensità della radiazione solare non è costante, ma dipende strettamente dalla posizione della vela rispetto alla posizione del Sole. Pertanto, il primo valore necessario all'algoritmo per quantificare la spinta dei fotoni è la distanza tra il veicolo e la fonte luminosa.
+
+All'interno della funzione \lstinline|GetSolarPressureAt()|, situata all'interno del gestore centrale \lstinline|SimulationManager|, il codice esegue per prima cosa una verifica sui parametri in ingresso. Il sistema controlla se la distanza radiale dal Sole (\lstinline|SailDistanceFromSunKm|) è già stata calcolata e fornita dalla vela che la richiama. In caso contrario (valore nullo o negativo), il Manager provvede a calcolarla autonomamente.
+
+L'operazione viene eseguita misurando la distanza vettoriale tra le coordinate della vela (\lstinline|SailLocationUU|) e la posizione fissa del Sole (\lstinline|SUN_POSITION|), precedentemente scalata nelle unità di misura del motore grafico. Il risultato viene poi subito riconvertito in chilometri tramite il fattore \lstinline|UU_TO_KM|, mantendo lo schema di unità coerente con il resto del sistema.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{La Legge del Quadrato Inverso applicata ai fotoni}
+
+Una volta ottenuta la distanza su cui si trova la vela rispetto al Sole, l'algoritmo procede al calcolo effettivo della pressione di radiazione. La propagazione dell'energia luminosa nel vuoto è regolata dalla legge dell'inverso del quadrato: man mano che i fotoni si allontanano dalla stella, si distribuiscono su una superficie sferica sempre più ampia, causando un decadimento quadratico dell'intensità.
+
+Il codice implementa questo principio fisico attraverso la formula standard per il calcolo della pressione solare ($P$):
+
+\begin{equation}
+    P = \frac{L}{4 \pi r^2 c}
+\end{equation}
+
+Dove:
+\begin{itemize}
+    \item $L$ è la luminosità solare, definita come \lstinline|SOLAR_LUMINOSITY| ($3.828 \times 10^{26} \, W$).
+    \item $r$ è la distanza radiale dal Sole, definita come \lstinline|DistanceFromSunKm| convertita in metri.
+    \item $c$ è la velocità della luce nel vuoto, definita come \lstinline|SPEED_OF_LIGHT| e convertita in metri al secondo.
+\end{itemize}
+
+Per fare in modo di essere il più coerenti possibile alle costanti fisiche (espresse nel Sistema Internazionale), il codice converte automaticamente la distanza \lstinline|DistanceFromSunKm| in metri prima di eseguire la divisione. Il risultato di questa operazione è un valore scalare espresso in Pascal ($N/m^2$), che rappresenta l'esatta pressione esercitata dalla luce in quel preciso punto dello spazio.
+
+\begin{lstlisting}[language=C++, caption={Calcolo della Pressione Solare nel \lstinline|SimulationManager.cpp|.}]
+double ASimulationManager::GetSolarPressureAt(FVector3d SailLocationUU, double SailDistanceFromSunKm) const {
+    // Risoluzione della distanza in Chilometri
+    double DistanceFromSunKm = SailDistanceFromSunKm > 0.0 ? SailDistanceFromSunKm : FVector3d::Distance(SailLocationUU, SUN_POSITION * KM_TO_UU) * UU_TO_KM;
+    
+    // Conversione obbligatoria in Metri per l'analisi dimensionale
+    double DistanceFromSunM = DistanceFromSunKm * 1000.0;
+    
+    // P = L / (4 * PI * r^2 * c)
+    double SolarPressure = SOLAR_LUMINOSITY / (4.0 * PI_GREEK * DistanceFromSunM * DistanceFromSunM * (SPEED_OF_LIGHT * 1000.0));
+    
+    return SolarPressure * ForceMultiplier;
+}
+\end{lstlisting}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Ottimizzazione del calcolo della pressione solare}
+
+Delegare il calcolo di questa formula al \lstinline|SimulationManager| non è solo una questione di ordine nel codice, ma una scelta logica ben precisa. La pressione solare, infatti, è un dato ambientale universale: in questa fase dipende esclusivamente dalla distanza, a prescindere dall'inclinazione, dal materiale o dalla grandezza della vela che la riceve.
+
+Mantenendo questa separazione logica, il sistema assicura che il Manager si comporti come un vero e proprio "fornitore" per quanto riguarda la pressione solare. Quando la classe \lstinline|ASolarSail| richiamerà questa funzione per calcolare la propria spinta, riceverà un valore di pressione pronto per i prossimi calcoli di forza.
+
+\subsection{Alterazione controllata delle forze con \textit{Force Multiplier}}
+
+Inoltre, questa struttura centralizzata permette l'inserimento di variabili di controllo globali, come il \lstinline|ForceMultiplier|. Moltiplicando il risultato finale per questo fattore esposto all'utente, il sistema offre la possibilità di aumentare o diminuire artificialmente l'intensità della luce solare per scopi di testing. Essendo inserito all'interno del Manager, questo moltiplicatore influenzerà coerentemente tutte le sonde presenti nella simulazione, senza richiedere modifiche successive ai calcoli locali delle singole vele.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Lo schema ottico della Membrana}
+
+Una volta calcolata la pressione ambientale esercitata dalla radiazione solare, il simulatore deve determinare come questa energia si traduca in vera e propria spinta meccanica per la vela. L'interazione tra i fotoni e il veicolo solare non è un semplice urto anelastico: il trasferimento di quantità di moto dipende in maniera diretta dalle proprietà ottiche e dai materiali di cui è composta la membrana.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Scomposizione dell'interazione fotone-superficie}
+
+Nella realtà astrodinamica, quando un flusso di fotoni colpisce una superficie, la sua energia viene frammentata in tre fenomeni ottici primari:
+\begin{itemize}
+    \item \textbf{Assorbimento ($\alpha$):} Il fotone viene catturato dal materiale, cedendo la sua intera quantità di moto ma generando calore.
+    \item \textbf{Riflessione speculare ($\rho_s$):} Il fotone rimbalza sulla superficie con un angolo di uscita identico a quello di ingresso, fornendo una spinta extra grazie al principio di azione e reazione.
+    \item \textbf{Riflessione diffusa ($\rho_d$):} Il fotone rimbalza, ma a causa dell'irregolarità del materiale viene disperso in una direzione casuale, riducendo l'efficienza della spinta.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Parametrizzazione dei Coefficienti Ottici}
+
+Per ottimizzare il sistema, il modello matematico condensa queste proprietà fisiche in un unico moltiplicatore, denominato nel codice \lstinline|SelectedReflectivityFactor|. 
+
+Questo coefficiente sintetizza i parametri ottici ($\rho_s, \rho_d, \alpha$) e rappresenta l'efficienza specifica della membrana nel tramutare la luce in spinta vettoriale, permettendo al simulatore di calcolare la forza risultante in un unico passaggio algebrico.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Analisi dei Preset di Riflettività}
+
+Per garantire flessibilità e facilità d'uso, il software offre all'utente una serie di preset predefiniti per il coefficiente di riflettività, ognuno dei quali simula un diverso tipo di materiale:
+
+\begin{lstlisting}[language=C++, caption={Selezione del coefficiente ottico in \lstinline|SolarSail.cpp|.}]
+double SelectedReflectivityFactor = 0.0;
+switch (Reflectivity_Factor) {
+    case EReflectivityPreset::Absorber:  SelectedReflectivityFactor = RFACTOR_ABSORBER;  break; // 1.0
+    case EReflectivityPreset::Medium:    SelectedReflectivityFactor = RFACTOR_MEDIUM;    break; // 1.5
+    case EReflectivityPreset::Realistic: SelectedReflectivityFactor = RFACTOR_REALISTIC; break; // 1.8
+    case EReflectivityPreset::Perfect:   SelectedReflectivityFactor = RFACTOR_PERFECT;   break; // 2.0
+    case EReflectivityPreset::Custom:    SelectedReflectivityFactor = RFACTOR_CUSTOM;    break;
+}
+\end{lstlisting}
+
+Analizzandoli più nello specifico:
+
+\begin{itemize}
+    \item \textbf{\lstinline|Absorber| (\lstinline|SelectedReflectivityFactor| $= 1.0$):} Simula un corpo perfettamente nero. La membrana cattura tutta la luce incidente e ne assorbe solamente la spinta dovuta all'impatto, senza alcun contributo aggiuntivo derivante dalla riflessione.
+    \item \textbf{\lstinline|Medium| (\lstinline|SelectedReflectivityFactor| $= 1.5$):} Rappresenta un materiale con caratteristiche ottiche intermedie. Risulta utile per valutare scenari di simulazione in cui la vela ha subito un grave degrado spaziale o è composta da polimeri semi-riflettenti.
+    \item \textbf{\lstinline|Realistic| (\lstinline|SelectedReflectivityFactor| $= 1.8$):} Offre una simulazione fisicamente accurata dei materiali aerospaziali reali (come il Mylar o il Kapton alluminizzato). Introduce una fisiologica riduzione delle performance dovuta all'irregolarità della superficie e a un assorbimento parziale dell'energia solare.
+    \item \textbf{\lstinline|Perfect| (\lstinline|SelectedReflectivityFactor| $= 2.0$):} Simula uno specchio ideale. Il fotone non solo colpisce la vela, ma rimbalza via elasticamente e intatto; per il principio di azione e reazione, questo doppio movimento raddoppia di fatto il trasferimento netto di quantità di moto.
+    \item \textbf{\lstinline|Custom|:} Permette all'utente di inserire manualmente un valore personalizzato per il coefficiente di riflettività, offrendo la massima libertà di sperimentazione. Questa opzione è particolarmente utile per testare materiali innovativi o scenari ipotetici che non rientrano nei preset standard.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Geometria dell'illuminazione e angolo di incidenza}
+
+L'effettiva spinta generata dalla pressione solare non dipende solo dalle proprietà ottiche della membrana, ma anche dall'orientamento geometrico della vela rispetto alla direzione dei raggi solari. Durante il volo, infatti, la vela solare cambia continuamente inclinazione: affinché la simulazione sia fisicamente coerente, non basta conoscere solo la riflettività della membrana, ma occorre determinare l'esatto angolo con cui i raggi solari la colpiscono.
+
+Il calcolo di questo orientamento è affidato alla funzione \lstinline|GetActorUpVector()|. Questa estrapola l'asse verticale dell'oggetto 3D e lo fornisce al simulatore sotto forma di vettore normale $\mathbf{n}$, garantendo che la direzione della vela sia sempre coerente con il sistema di riferimento.
+
+Una volta ottenuta la normale della vela e calcolata la direzione da cui proviene la luce (\lstinline|SunDirection|), l'algoritmo analizza l'angolo di incidenza dei fotoni attraverso un prodotto scalare (\lstinline|FVector3d::DotProduct|):
+
+\begin{equation}
+\text{Alignment} = \mathbf{u} \cdot \mathbf{n} = |\mathbf{u}| |\mathbf{n}| \cos(\alpha)
+\end{equation}
+
+\begin{lstlisting}[language=C++, caption={Estrazione della normale e calcolo dell'angolo di incidenza in \lstinline|SolarSail.cpp|.}]
+SailNormal = FVector3d(GetActorUpVector());
+FVector3d SunPosUU = Manager->SUN_POSITION * Manager->KM_TO_UU;
+SunDirection = (SunPosUU - SailPosition).GetSafeNormal();
+
+// Calcolo dell'angolo tra la faccia della vela e i raggi solari
+double Alignment = FVector3d::DotProduct(SunDirection, SailNormal);
+\end{lstlisting}
+
+Questa operazione matematica restituisce un moltiplicatore di efficienza: se la variabile \lstinline|Alignment| è pari a $1$, la vela è orientata in modo perfettamente perpendicolare ai raggi solari, massimizzando la cattura dei fotoni. Qualora il valore si avvicini allo $0$, la membrana risulta posizionata parallelamente alla luce: i fotoni scorrono lungo la sua superficie senza impattare, annullando di fatto la pressione propulsiva.
+Se invece il valore è negativo, e il parametro \lstinline|DoubleSidedSail| è impostato a \lstinline|false|, significa che la vela è rivolta con la faccia opposta al Sole, e quindi non riceve alcuna spinta. In questo caso, l'algoritmo imposta la forza solare a zero, evitando di generare risultati fisicamente incoerenti.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Il Calcolo della spinta a raggi (Ray Casting)}
+
+Per calcolare in modo realistico l'impatto della luce sulla vela solare, specialmente in presenza di ostacoli o auto-ombreggiamento, non è sufficiente considerare la vela come un singolo punto. È necessario analizzarne l'intera vela come una superficie tridimensionale. Per fare questo, il simulatore utilizza un algoritmo di campionamento spaziale che mappa la superficie della sonda attraverso una fitta griglia di sensori luminosi virtuali.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Logica di campionamento della superficie}
+
+Il processo inizia dividendo l'area totale della membrana in una matrice bidimensionale. L'utente, tramite l'editor di Unreal Engine, definisce il parametro \lstinline|GridResolution|, che determina il numero di suddivisioni per lato della vela. Per prevenire errori critici, come divisioni per zero, il codice controlla che il valore inserito sia almeno pari a 1 \lstinline|SafeResolution|, garantendo così la presenza di almeno un punto di campionamento.
+
+Elevando al quadrato questo valore, il sistema calcola il numero complessivo di "fotoni" simulati (\lstinline|TotalPhotons|), ovvero quanti raggi paralleli verranno lanciati verso il Sole.
+
+Successivamente, l'algoritmo calcola lo spazio esatto (\lstinline|Step|) che deve esserci tra un punto e l'altro per distribuire i raggi in modo uniforme su tutta la vela. Fatto questo, esegue l'operazione più importante: divide l'area totale della membrana (\lstinline|SAIL_AREA|) per il numero complessivo di fotoni, ottenendo l'\lstinline|AreaPerRay|. Questo valore rappresenta la porzione di superficie associata a ogni singolo raggio: più è alto, più ogni raggio rappresenta una grande percentuale della vela, aumentando la forza che ogni fotone trasferisce alla sonda. Al contrario, un valore più basso implica una maggiore precisione, ma anche un aumento esponenziale delle operazioni di calcolo richieste, e quindi un maggior utilizzo della CPU.
+
+\begin{lstlisting}[language=C++, caption={Impostazione della griglia di campionamento in \texttt{SolarSail.cpp}.}]
+int32 SafeResolution = FMath::Max(1, GridResolution);
+TotalPhotons = SafeResolution * SafeResolution;
+
+double GridSizeUU = 100.0 * SAIL_SCALE; 
+double Step = GridSizeUU / SafeResolution;
+
+// Porzione di area (in metri quadrati) associata a ogni raggio
+double AreaPerRay = SAIL_AREA / TotalPhotons;
+\end{lstlisting}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Generazione e orientamento dei raggi di controllo}
+
+Una volta definita la struttura della matrice, l'algoritmo esegue un doppio ciclo \textit{for} annidato, che itera su ogni punto di campionamento della superficie. Per ogni iterazione, il sistema calcola le coordinate del punto di origine del raggio (\lstinline|SamplePos|) sulla vela, partendo dal centro della membrana e spostandosi in base alla posizione del punto nella griglia.
+
+Per calcolare da dove far partire ogni raggio (\lstinline|SamplePos|), l'algoritmo prende come riferimento il centro della vela e si sposta lungo i suoi assi direzionali (\lstinline|Forward| e \lstinline|Right|) per trovare la cella corretta. Una volta individuato il punto esatto sulla griglia, il codice lo imposta direttamente come origine del laser (\lstinline|TraceStart|).
+
+Ora che il punto di partenza è stato definito, è necessario orientare il raggio verso la fonte luminosa. Per chiudere l'operazione infatti, la destinazione del laser (\lstinline|TraceEnd|) viene assegnata alla posizione globale del Sole (\lstinline|SunPosUU|). In questo modo, a ogni giro del ciclo \textit{for}, il simulatore traccia una linea retta perfetta tra un "pixel" specifico della sonda e il centro del Sole. Questo segmento invisibile è esattamente ciò che il motore fisico userà nel passaggio successivo per calcolare le collisioni.
+
+\begin{lstlisting}[language=C++, caption={Generazione delle coordinate per il singolo raggio.}]
+for (int32 i = 0; i < SafeResolution; i++) {
+    for (int32 j = 0; j < SafeResolution; j++) {
+        
+        // Calcolo degli offset per centrare la griglia
+        double OffX = (i - SafeResolution / 2.0 + 0.5) * Step;
+        double OffY = (j - SafeResolution / 2.0 + 0.5) * Step;
+        
+        // Posizione esatta del "pixel" sulla vela
+        FVector3d SamplePos = SailPosition + (Forward * OffX) + (Right * OffY);
+        
+        // Definizione di inizio e fine del raggio
+        FVector3d TraceStart = SamplePos;
+        FVector3d TraceEnd = SunPosUU;
+        
+        // [Inizio routine fisica di LineTrace]
+    }
+}
+\end{lstlisting}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Ottimizzazioni prestazionali con \lstinline|RaycastTimer|}
+
+Chiedere al motore grafico di calcolare centinaia o migliaia di collisioni (\textit{Line Trace}) a ogni singolo fotogramma (mediamente 60 volte al secondo) è un'operazione pesantissima per la CPU. Senza un'effettiva gestione intelligente, questo approccio porterebbe a un drastico calo delle prestazioni, con frequenti blocchi o rallentamenti della simulazione.
+
+Per garantire prestazioni fluide costanti, la funzione \lstinline|UpdateSolarForce()| utilizza una misura di sicurezza nota: un \textit{timer} di esecuzione (\lstinline|RaycastTimer|).
+In questo modo il sistema esegue il ciclo di calcolo dei raggi solo a intervalli regolari, definiti dal parametro \lstinline|RaycastInterval| (ad esempio, ogni 0.5 secondi). Durante i fotogrammi in cui il timer non è scattato, la funzione si limita ad applicare la forza solare calcolata nell'ultimo ciclo completo, senza eseguire nuovi calcoli di collisione.
+
+\begin{lstlisting}[language=C++, caption={Sistema di ritenzione della forza per l'ottimizzazione computazionale.}]
+RaycastTimer += DeltaTime;
+
+// Se il timer non e' ancora scattato, usa la forza calcolata nel ciclo precedente
+if (RaycastTimer < RaycastInterval) {
+    if (Manager->TimeScale <= 1.1f && !SolarForce.ContainsNaN()) {
+        if(SAIL_MESH->IsSimulatingPhysics()) {
+            SAIL_MESH->AddForce(FVector(SolarForce));
+        }
+    }
+    return; // Interrompe la funzione saltando il calcolo della griglia
+}
+RaycastTimer = 0.0f; // Resetta il timer e procede con il calcolo pesante
+\end{lstlisting}
+
+Terminato il calcolo, la spinta solare complessiva viene salvata nella memoria della sonda (\lstinline|SolarForce|). Nei \textit{Tick} successivi, la funzione non esegue più alcun calcolo geometrico di collisione, ma si limita ad applicare questa forza pre-calcolata al motore fisico, garantendo così una simulazione fluida e stabile anche con griglie di campionamento ad alta risoluzione.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Gestione delle ombre e degli ostacoli}
+
+Costruita la griglia geometrica e ricavati i punti di partenza per ogni singolo "pixel" della vela, il simulatore deve stabilire quali di queste porzioni siano esposte alla luce e quali, invece, si trovino in zone d'ombra causate da corpi che si trovano lungo la traiettoria verso il Sole, come la Terra o un asteroide. Per risolvere questo problema, il codice si affida al motore di collisione nativo di Unreal Engine.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Preparazione del raggio e auto-collisione}
+
+Prima di lanciare fisicamente il raggio vettoriale, il sistema deve configurare i parametri necessari affinché il motore grafico possa registrare e gestire correttamente l'eventuale collisione.
+Vengono innanzitutto inizializzate due variabili:
+
+La prima è una struttura dati di tipo \lstinline|FHitResult| (chiamata \lstinline|Hit|). Si tratta di un parametro di output che il motore grafico compila automaticamente qualora il laser colpisca un ostacolo, memorizzando informazioni come il nome dell'oggetto colpito e la distanza esatta dell'impatto.
+
+La seconda è una variabile di tipo \lstinline|FCollisionQueryParams| (chiamata \lstinline|P|), utilizzata per definire le regole di collisione. Attraverso questa variabile è possibile evitare un errore molto comune, ovvero l'auto-collisione. Questo avviene tramite l'esecuzione dell'istruzione \lstinline|P.AddIgnoredActor(this)|, che impone al motore fisico di escludere la vela dal calcolo delle intersezioni. Senza questo sistema di sicurezza, i laser colpirebbero i poligoni della membrana nell'istante stesso in cui vengono generati, azzerando la spinta propulsiva e invalidando completamente la simulazione.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{L'esecuzione del raggio (\texttt{Line Trace})}
+
+Dichiarate le variabili, il codice procede ad eseguire il lancio del raggio tramite la funzione nativa \lstinline|LineTraceSingleByChannel|. 
+
+\begin{lstlisting}[language=C++, caption={Esecuzione del raggio di occlusione solare.}]
+FHitResult Hit;
+FCollisionQueryParams P;
+P.AddIgnoredActor(this);
+
+bool bHitSomething = GetWorld()->LineTraceSingleByChannel(
+    Hit, 
+    FVector(TraceStart), 
+    FVector(TraceEnd), 
+    ECC_Visibility, 
+    P
+);
+\end{lstlisting}
+
+La funzione \lstinline|LineTraceSingleByChannel| prende in ingresso diversi parametri fondamentali:
+\begin{itemize}
+    \item \textbf{\lstinline|Hit| (\lstinline|FHitResult&|):} La struttura dati, che il motore grafico compilerà in caso di collisione, altrimenti rimarrà vuota.
+    \item \textbf{\lstinline|TraceStart| (\lstinline|FVector|):} Il punto di partenza del raggio, calcolato in precedenza come la posizione del "pixel" sulla vela.
+    \item \textbf{\lstinline|TraceEnd| (\lstinline|FVector|):} La destinazione del raggio, impostata alla posizione del Sole.
+    \item \textbf{\lstinline|ECC_Visibility| (\lstinline|ECollisionChannel|):} Il canale di collisione da verificare. In questo caso, il sistema controlla solo gli oggetti che sono stati marcati come "visibili" per i raggi di controllo.
+    \item \textbf{\lstinline|P| (\lstinline|FCollisionQueryParams|):} Le regole di collisione, che includono l'istruzione per ignorare la vela stessa.
+\end{itemize}
+
+Il risultato della funzione è un booleano (\lstinline|bHitSomething|) che indica se il raggio ha colpito un ostacolo lungo la traiettoria verso il Sole. Se il valore è \lstinline|true|, significa che la luce è stata bloccata da un corpo (ad esempio, la Terra), e quindi quel punto specifico della vela si trova in una zona d'ombra. Se invece è \lstinline|false|, il raggio ha raggiunto il Sole senza ostacoli, confermando che quella porzione della membrana è illuminata e contribuisce alla spinta propulsiva.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Conversione spaziale e debug visivo}
+
+Subito dopo aver lanciato il raggio, il codice deve memorizzare la coordinata del punto appena analizzato per poterlo in seguito disegnare a schermo per scopi di debug (i raggi verdi e rossi). Tuttavia, sorge un problema tecnico: la vela viaggia a migliaia di chilometri orari, quindi se il simulatore memorizzasse la coordinata globale dell'impatto (\lstinline|SamplePos|), nel \textit{Tick} successivo quel punto rimarrebbe fisso nella sua posizione assoluta, mentre il modello 3D si sarebbe già spostato, disallineando i laser.
+
+Per risolvere il problema, l'algoritmo sfrutta la funzione \lstinline|InverseTransformPosition|. Questa istruzione converte istantaneamente le coordinate assolute in coordinate locali, ancorando il punto al centro della vela in modo che si muova solidalmente con essa.
+
+\begin{lstlisting}[language=C++, caption={Conversione del punto in coordinate locali.}]
+FVector LocalP = ActorTrans.InverseTransformPosition(FVector(SamplePos));
+\end{lstlisting}
+
+In questo modo, il vettore risultante (\lstinline|LocalP|) diventa a tutti gli effetti solidale al sistema di riferimento della \textit{mesh} 3D. Questo garantisce che i laser di debug vengano disegnati sempre nella posizione esatta, rimanendo perfettamente solidali con il modello 3D in movimento senza creare sfasamenti visivi.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Il filtro della luce e il conteggio dei fotoni}
+
+L'ultimo passaggio del ciclo \textit{for} serve a decidere se la cella analizzata genera o meno spinta. Il codice usa l'istruzione \lstinline|if (!bHitSomething)| per ribaltare il risultato della collisione. In parole povere: se il raggio non ha colpito alcun ostacolo, significa che il percorso verso il Sole è completamente libero, e l'algoritmo può quindi calcolare la forza solare per quella sezione.
+
+Il codice esegue quindi due operazioni:
+\begin{enumerate}
+    \item Incrementa il contatore \lstinline|ActivePhotons|, parametro fondamentale per la telemetria che indica in \textit{real time} quante porzioni della vela stanno ricevendo luce.
+    \item Aggiunge la coordinata locale \lstinline|LocalP| all'array \lstinline|LocalActiveRays|. Questo array verrà letto dal sistema per generare i laser diagnostici verdi, a indicare una corretta illuminazione.
+\end{enumerate}
+
+Al contrario, se l'istruzione rileva che il raggio è stato bloccato (ad esempio dalla Terra), il tassello si trova in una zona d'ombra. La spinta viene scartata per quel segmento, e la coordinata \lstinline|LocalP| viene invece inserita nell'array \lstinline|LocalBlockedRays|. Quest'ultimo verrà sfruttato per dipingere indicatori rossi.
+
+\begin{lstlisting}[language=C++, caption={Filtro logico e smistamento dei raggi per il debug e la fisica.}]
+if (!bHitSomething) {
+    // Il raggio ha raggiunto il Sole: il tassello e' illuminato
+    ActivePhotons++;
+    
+    // [Qui avviene il calcolo della spinta solare per questo tassello]
+
+    if (Manager->ShowPhotonDebug) {
+        LocalActiveRays.Add(LocalP); // Registrazione laser verde
+    }
+} 
+else if (Manager->ShowPhotonDebug) {
+    // Il raggio e' stato bloccato: zona d'ombra
+    LocalBlockedRays.Add(LocalP);    // Registrazione laser rosso
+}
+\end{lstlisting}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Integrazione Vettoriale e Forza Risultante}
+
+Concluso il tracciamento dei raggi ed esclusi quelli bloccati da ostacoli, l'algoritmo dispone dell'elenco delle celle fisicamente illuminate. Per ciascuna di queste, il codice calcola l'intensità della spinta meccanica generata dalla luce, converte il valore scalare in un vettore tridimensionale e lo somma all'accumulatore per ricavare la forza totale. Questa sequenza di operazioni costituisce la base matematica per simulare la Pressione di Radiazione Solare (SRP).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Calcolo della forza propulsiva per singola cella}
+
+Superata la verifica geometrica di occlusione tramite l'istruzione \lstinline|if (!bHitSomething)|, l'algoritmo ha la certezza che la traiettoria verso il Sole è completamente libera. Questo conferma che il frammento di vela analizzato è esposto alla luce diretta e può generare propulsione, autorizzando il sistema a passare dalla fase di tracciamento spaziale, tramite il \textit{Ray Casting} al calcolo fisico della forza. L'obiettivo è determinare l'effettiva spinta generata dall'impatto dei fotoni su quella specifica cella. Il valore scalare di questa forza locale viene ricavata assemblando i parametri ottici e spaziali in un'unica formula algebrica:
+
+\begin{lstlisting}[language=C++, caption={Calcolo dell'incidenza geometrica e della magnitudo della spinta.}]
+// 1. Calcolo dell'angolo di incidenza tramite prodotto scalare
+double CosTheta = FVector::DotProduct(SailNormal, SunDirection);
+
+// 2. Recupero della pressione solare ambientale dal Manager
+double LocalPressure = Manager->GetSolarPressureAt(SamplePos, SailDistanceFromSun);
+
+// 3. Calcolo finale della magnitudo (Newton) per la singola cella
+double ForceMag = SelectedReflectivityFactor * LocalPressure * AreaPerRay * (CosTheta * CosTheta);
+\end{lstlisting}
+
+Questa singola riga di codice implementa in C++ la vera e propria formula della pressione solare su una superficie riflettente. Scomponendo l'istruzione, ogni variabile moltiplicata ha un compito fisico ben preciso:
+
+\begin{itemize}
+    \item \textbf{\lstinline|SelectedReflectivityFactor|:} Rappresenta l'efficienza ottica del materiale e implementa fisicamente il principio di conservazione della quantità di moto. Interrogando l'\lstinline|enum| \lstinline|EReflectivityPreset|, il codice assegna un moltiplicatore specifico: 1.0 per un assorbitore perfetto (il fotone cede la sua energia arrestandosi) e 2.0 per uno specchio perfetto (il fotone rimbalza, trasferendo il doppio della quantità di moto). Questa variabile scala direttamente la forza in base alle proprietà del materiale.
+    \item \textbf{\lstinline|LocalPressure|:} Determina l'energia fornita dal Sole alla distanza in cui si trova la specifica cella. Viene calcolata dinamicamente dal \lstinline|SimulationManager| tramite la funzione \lstinline|GetSolarPressureAt()|. Il metodo elabora le costanti astrofisiche (luminosità solare e velocità della luce) restituendo un valore in Pascal che decade rigorosamente secondo la legge dell'inverso del quadrato della distanza.
+    \item \textbf{\lstinline|AreaPerRay|:} Rappresenta la porzione di superficie assegnata a ciascun raggio. Per convertire correttamente la pressione ambientale (Pascal) in forza propulsiva (Newton), il calcolo deve agire su un'area reale. L'algoritmo ricava questo valore dividendo semplicemente i metri quadrati totali della membrana per il numero di raggi campionati (\lstinline|SAIL_AREA / TotalPhotons|).
+    \item \textbf{\lstinline|(CosTheta * CosTheta)|:} Gestisce l'incidenza geometrica dei fotoni rispetto all'orientamento della \textit{mesh}. L'elevazione al quadrato del coseno ($\cos^2\theta$) deriva dalla necessità di risolvere due distinti fenomeni fisici che avvengono simultaneamente:
+    \begin{itemize}
+        \item \textbf{Riduzione dell'area esposta:} Il primo \lstinline|CosTheta| tiene conto della variazione dell'area della cella che è effettivamente esposta. Quando la vela è inclinata rispetto al Sole, la sua area esposta alla luce diminuisce. Questo riduce il numero di fotoni che colpiscono effettivamente la superficie.
+        \item \textbf{Estrazione della spinta normale:} Il secondo \lstinline|CosTheta| serve a isolare unicamente la forza che agisce perpendicolarmente alla vela. Nel caso di  riflessione speculare, le componenti della forza parallele alla superficie si annullano a vicenda; resta utile ai fini della spinta solo il vettore normale. Moltiplicando nuovamente per il coseno, il codice scarta le componenti tangenziali e calcola la spinta effettiva lungo l'asse di movimento della vela.
+    \end{itemize}
+    L'integrazione di questi due contributi impone nel codice la legge del quadrato del coseno ($\cos^2\theta$), fondamentale per la navigazione spaziale basata sulla pressione di radiazione. Questa implementazione evita che il sistema calcoli spinte artificialmente elevate quando la sonda non è perfettamente allineata al Sole.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Integrazione numerica della spinta totale}
+
+La variabile \lstinline|ForceMag| costituisce unicamente il modulo della spinta espresso in Newton. Per essere integrata nel calcolo dinamico, questa grandezza scalare deve essere trasformata in un vettore applicando l'orientamento spaziale calcolato dal sistema, altrimenti non può essere sommata alle altre forze che agiscono sulla vela.
+
+Il sistema trasforma il modulo della forza in un vettore tridimensionale moltiplicando il valore di \lstinline|ForceMag| per il versore \lstinline|PushDirection|. Quest’ultimo viene calcolato all'inizio della procedura analizzando l'allineamento (\lstinline|Alignment|) tra la normale della vela e la direzione dei raggi solari tramite prodotto scalare. Questa operazione garantisce la corretta direzionalità della spinta, assicurando che il vettore risultante agisca sempre in opposizione alla sorgente luminosa e colpisca esclusivamente la faccia esposta della membrana.
+
+\begin{lstlisting}[language=C++, caption={Logica di calcolo: dal verso pre-determinato all'accumulo scalare.}]
+// --- PRIMA DEL DOPPIO CICLO ---
+// Logica "Double-Sided": si determina il verso in base alla faccia illuminata
+if (Alignment < 0) {
+    PushDirection = SailNormal;
+    CosTheta = FMath::Abs(Alignment);
+} else {
+    PushDirection = -SailNormal;
+    if (DoubleSidedSail) {
+        CosTheta = Alignment;
+    } else {
+        CosTheta = 0.0; 
+    }
+}
+FVector3d AccumulatedForce = FVector3d::Zero(); // Accumulatore scalare
+
+// --- DENTRO IL DOPPIO CICLO (per ogni fotone) ---
+// Accumulo della sola intensita (Newton) per ogni raggio non occluso
+AccumulatedForce += ForceMag * PushDirection;
+\end{lstlisting}
+
+Questa architettura ottimizza il calcolo dividendo la valutazione logica dell'assetto dal ciclo intensivo di campionamento dei fotoni. Pre-determinando il verso della spinta e il coefficiente angolare globale prima di iniziare l'iterazione, il sistema elimina migliaia di ricalcoli ridondanti, garantendo al contempo la coerenza fisica della membrana:
+
+\begin{itemize}
+\item \textbf{\lstinline|PushDirection| (Verso della spinta):} Definisce l'orientamento del vettore forza in base alla faccia esposta al Sole. Sfruttando il segno di \lstinline|Alignment|, il codice decide se la spinta seguirà la normale (\lstinline|SailNormal|) o il suo inverso (\lstinline|-SailNormal|). Questa inversione automatica è fondamentale per la navigazione, poiché permette alla sonda di generare propulsione sempre in allontanamento dalla sorgente luminosa, indipendentemente dalla rotazione del corpo rigido.
+\item \textbf{Gestione \lstinline|DoubleSidedSail|:} Il sistema utilizza un controllo condizionale preventivo per abilitare o disabilitare la propulsione. Se la luce colpisce il retro di una vela configurata come \textit{single-sided}, il valore di \lstinline|CosTheta| viene forzato a $0.0$. Questo "interruttore logico" annulla matematicamente il valore della forza all'interno del ciclo, simulando una superficie trasparente o non attiva sul lato posteriore senza appesantire il loop con ulteriori controlli \textit{if}.
+\item \textbf{\lstinline|AccumulatedForce| (Accumulatore Vettoriale):} Funge da buffer per l'integrazione della spinta totale. Poiché \lstinline|PushDirection| e \lstinline|CosTheta| sono già stati validati all'esterno, ad ogni iterazione il codice si limita a sommare il contributo locale (\lstinline|ForceMag * PushDirection|) al totale. Al termine della scansione, la variabile restituisce la sommatoria di tutti i contributi di pressione attivi, escludendo i contributi delle parti della vela oscurate.
+\end{itemize}
+
+Terminato il doppio ciclo iterativo, il buffer \lstinline|AccumulatedForce| contiene il vettore della spinta solare risultante. A questo punto, il codice archivia i dati nelle variabili globali per la telemetria e il sistema di log CSV:
+
+\begin{lstlisting}[language=C++, caption={Estrazione dei parametri telemetrici.}]
+SolarForce = AccumulatedForce;
+SolarForceModule = SolarForce.Size();
+SolarForceVersor = SolarForce.GetSafeNormal();
+\end{lstlisting}
+
+Oltre al vettore puro (\lstinline|SolarForce|), vengono calcolati e salvati il modulo (\lstinline|Size()|) e il versore (\lstinline|GetSafeNormal()|) della forza, parametri fondamentali per la telemetria e l'analisi della simulazione.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Applicazione al motore fisico e controlli di sicurezza}
+
+L'ultima fase della funzione \lstinline|UpdateSolarForce| consiste nel tradurre la matematica in un'accelerazione reale all'interno dello spazio tridimensionale di Unreal Engine. Prima di passare il vettore \lstinline|SolarForce| al solutore dinamico nativo di Unreal Engine (PhysX/Chaos), il codice si assicura che esso sia privo di errori numerici e che la simulazione fisica sia attiva, altrimenti la forza non verrebbe applicata correttamente, o peggio, potrebbe causare crash o comportamenti imprevedibili.
+
+\begin{lstlisting}[language=C++, caption={Verifiche di sicurezza e applicazione della forza al Rigid Body.}]
+if (Manager->TimeScale <= 1.1f && !SolarForce.ContainsNaN()) {
+    if(SAIL_MESH->IsSimulatingPhysics()) {
+        SAIL_MESH->AddForce(FVector(SolarForce));
+    }
+}
+\end{lstlisting}
+
+L'istruzione \lstinline|if| principale richiede che vengano soddisfatte due condizioni fondamentali prima di applicare la forza:
+\begin{enumerate}
+    \item \textbf{Assenza di NaN:} La funzione \lstinline|ContainsNaN()| verifica che il vettore \lstinline|SolarForce| non contenga valori "Not a Number". Questi errori numerici possono emergere da operazioni matematiche non definite (ad esempio, divisioni per zero o radici quadrate di numeri negativi) e causano comportamenti imprevedibili nel motore fisico, come accelerazioni infinite o crash. Questo controllo garantisce che solo forze valide vengano applicate alla vela.
+    \item \textbf{\lstinline|Manager->TimeScale <= 1.1f| (Switch Cinematico):} Questo controllo impedisce che la forza venga applicata nel motore fisico nativo durante le fasi di accelerazione temporale (\lstinline|TimeScale > 1.1f|). Infatti durante il "fast forward", la simulazione fisica viene disabilitata per evitare instabilità e garantire che i calcoli di spinta non interferiscano con la velocità di esecuzione. In questo modo, quando l'utente accelera il tempo, il sistema non applica fisicamente la forza nel motore grafico, ma utilizza i vettori appena calcolati per aggiornare la traiettoria tramite integrazione numerica, mantenendo la coerenza orbitale della vela anche a velocità di esecuzione estreme.
+\end{enumerate}
+
+Superati i controlli di sicurezza, l'algoritmo verifica che il componente grafico sia effettivamente governato dal solutore dinamico (\lstinline|IsSimulatingPhysics()|). Se l'esito è positivo, la spinta viene applicata tramite l'istruzione nativa \lstinline|SAIL_MESH->AddForce()|. Durante la chiamata avviene un \textit{cast} esplicito da \lstinline|FVector3d| a \lstinline|FVector|: questa operazione converte il dato dalla doppia precisione (indispensabile a monte per elaborare le distanze interplanetarie senza incorrere in arrotondamenti indesiderati) alla singola precisione a 32-bit, ovvero il formato richiesto nativamente dal motore di collisione di Unreal Engine. L'esecuzione di questo comando chiude il ciclo di aggiornamento: l'analisi ottica e geometrica della luce è stata formalmente tradotta in un'accelerazione spaziale sul corpo rigido.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

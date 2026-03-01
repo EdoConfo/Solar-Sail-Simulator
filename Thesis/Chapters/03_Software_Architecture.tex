@@ -1,213 +1,239 @@
 \chapter{Architettura Software}
 \label{chap:architettura_software}
 
-La traduzione del rigoroso ecosistema matematico descritto nel capitolo precedente in un ambiente virtuale interattivo richiede una solida base informatica. Questo capitolo analizza l'architettura Object-Oriented (OOP) sviluppata all'interno del motore grafico Unreal Engine 5, illustrando come le entità fisiche della simulazione siano state modellate attraverso classi C++ specializzate, garantendo sia prestazioni in tempo reale sia fedeltà numerica nell'integrazione astrodinamica.
+L'implementazione delle meccaniche fisiche viste nel capitolo precedente in un ecosistema virtuale interattivo richiede una struttura software solida e ben progettata.
+Questo capitolo mira ad analizzare l'architettura software del progetto, sviluppato tramite il celebre motore grafico Unreal Engine 5.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Unreal Engine come framework di calcolo scientifico}
-L'utilizzo di un motore grafico commerciale per scopi di ricerca astrodinamica richiede un parziale cambio di paradigma rispetto all'uso tradizionale orientato all'intrattenimento. In questo elaborato, Unreal Engine non viene impiegato per le sue capacità puramente estetiche, ma viene trattato come un vero e proprio \textit{framework} di calcolo scientifico \cite{ericson2004real}. 
+\section{Unreal Engine come piattaforma di simulazione scientifica}
 
-Sfruttando il suo nucleo nativo in C++ ad alte prestazioni, il motore fornisce un'infrastruttura robusta per l'esecuzione di calcoli vettoriali complessi, la gestione spaziale tridimensionale e l'aggiornamento temporale continuo delle variabili cinematiche. Per comprendere come il modello matematico della vela solare sia stato tradotto in codice eseguibile, è imperativo analizzare i due pilastri architetturali su cui si fonda Unreal Engine: il modello compositivo e la gestione discreta del tempo.
+Anche se Unreal Engine è stato originariamente sviluppato per la creazione di prodotti videoludici, la potenza di calcolo di Unreal Engine è ideale per simulazioni in ambito scientifico. Il simulatore sviluppato infatti ne sfrutta il \textit{rendering} in tempo reale e l'efficiente allocazione delle risorse per condurre simulazioni astrodinamiche complesse, offrendo anche un'interfaccia visiva molto più immersiva e interattiva rispetto alle soluzioni tradizionali \cite{ericson2004real}.
+
+Grazie alla grande efficienza garantita dal linguaggio C++, il motore grafico fornisce un'infrastruttura robusta per l'esecuzione di calcoli vettoriali complessi e l'aggiornamento continuo delle variabili fisiche. Per comprendere la transizione delle leggi fisiche della vela solare in questo ambiente virtuale, è necessario prima esaminare due concetti fondamentali di Unreal Engine: lo schema \textit{Actor-Component} e la gestione ciclica del tempo.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Il paradigma Actor-Component}
-A differenza della classica programmazione orientata agli oggetti basata su un'ereditarietà profonda e monolitica, l'architettura di Unreal Engine predilige fortemente la composizione rispetto all'ereditarietà. Questo approccio altamente modulare si concretizza nel paradigma \textit{Actor-Component}.
+\subsection{Lo schema Actor-Component}
 
-All'interno del motore, l'entità fondamentale in grado di esistere nello spazio tridimensionale è definita dalla classe base \lstinline|AActor|. Un Attore, di per sé, è un contenitore astratto provvisto di una trasformazione spaziale globale (posizione, rotazione e scala vettoriale), ma intrinsecamente privo di logica fisica o rappresentazione visiva. Per dotare un Attore di comportamenti tangibili, l'ingegnere del software deve "assemblare" al suo interno diverse istanze derivate dalla classe \lstinline|UActorComponent|. 
+L'architettura di Unreal Engine favorisce in modo marcato l'uso della composizione. Tale strategia si concretizza nel modello noto come \textit{Actor-Component}.
 
+L'elemento fondamentale che "esiste" nel mondo tridimensionale è l'Attore (derivato dalla classe propria di Unreal Engine \lstinline|AActor|) \cite{epicgames_unrealengine}. Un Attore può essere progettato inizialmente come un contenitore vuoto: esso possiede proprietà che lo identificano nel mondo virtuale (posizione, rotazione e scala), ma non possiede alcuna logica complessa o di espressione grafica. I comportamenti e l'estetica vengono aggiunti in modo modulare attribuendogli una o più componenti (derivati dalla classe \lstinline|UActorComponent|) \cite{epicgames_unrealengine}.
 
+Per costruire il veicolo principale della simulazione (la classe \lstinline|ASolarSail|), sono stati assemblati i seguenti componenti:
 
-Nel contesto del simulatore sviluppato, il veicolo spaziale principale (\lstinline|ASolarSail|) è stato progettato istanziando e combinando strategicamente componenti specifici:
 \begin{itemize}
-    \item \textbf{Componenti strutturali:} Un \lstinline|UStaticMeshComponent| viene utilizzato per definire la geometria esatta della membrana della vela. Oltre a fornire la rappresentazione visiva, questo componente genera il \textit{collider} matematico necessario agli algoritmi di \textit{ray casting} per determinare dinamicamente l'area esposta al flusso fotonico.
-    \item \textbf{Componenti logici e direzionali:} Componenti specializzati, come l'\lstinline|UArrowComponent|, vengono ancorati all'Attore per rappresentare visivamente e computazionalmente i sistemi di riferimento locali (come il versore normale $\mathbf{n}$ alla superficie della vela), fondamentali per il continuo ricalcolo dell'angolo di incidenza solare ($\alpha$).
+    \item \textbf{Modello 3D e Root Component:} Un \lstinline|UStaticMeshComponent| viene impiegato per inserire la vela nell'ambiente virtuale ed è impostato come Componente "Radice" (\textit{Root Component}) per l'intero Attore: questo indica che tutte le modifiche di posizione o rotazione dell'Attore  si riflettono direttamente anche sul \textit{Root Component} stesso. Oltre a renderlo visibile, ottiene la funzione di \textit{collider}: è la superficie contro cui "sbattono" i raggi virtuali (\textit{ray casting}), permettendo al sistema di calcolare con esattezza l'area illuminata e le zone in ombra.
+    \item \textbf{Assi di orientamento spaziale:} Per semplificare la complessa matematica vettoriale, il codice sfrutta i riferimenti direzionali nativi dell'Attore (spesso visualizzati in editor tramite \lstinline|UArrowComponent|). Attraverso funzioni specifiche (come \lstinline|GetActorUpVector()|), il programma estrae in modo immediato l'asse perpendicolare della superficie (il vettore normale $\mathbf{n}$). Questo dato è indispensabile per calcolare l'inclinazione della vela rispetto ai raggi solari (l'angolo $\alpha$) e stabilire la direzione della spinta.
+    \item \textbf{Vettori a doppia precisione:} Per gestire le enormi distanze spaziali, la vela solare non può affidarsi alle variabili a singola precisione (\lstinline|FVector| composto da \lstinline|float|) fornite nativamente da Unreal Engine \cite{epicgames_unrealengine}. Per le sue operazioni di fisica infatti, la classe \lstinline|ASolarSail| sfrutta una struttura dati basata su variabili a doppia precisione (\lstinline|FVector3d|). Questo consente di mantenere l'accuratezza dei calcoli anche a scale astronomiche, evitando errori di arrotondamento che potrebbero compromettere la stabilità della simulazione.
+    \item \textbf{Sistema di telemetria e tracciamento:} La classe include anche un sistema di registrazione dei dati telemetrici. Ad ogni ciclo, raccoglie i dati di volo vitali (come le forze applicate, l'efficienza dei fotoni e la distanza dalla Terra) per stamparli a schermo e, contemporaneamente, salvarli in modo persistente su file \textit{CSV} per l'analisi post-simulazione.
 \end{itemize}
-
-Tale rigida separazione delle responsabilità (\textit{Separation of Concerns}) rende l'architettura del simulatore estremamente flessibile. La complessa logica di integrazione orbitale risiede all'interno della classe principale dell'Attore, mentre l'onere del calcolo delle intersezioni spaziali viene delegato ai componenti geometrici sottostanti, massimizzando l'efficienza computazionale del processore.
 
 \begin{figure}[htbp!]
     \centering
     \includegraphics[width=0.75\textwidth]{Images/actor_component_diagram.png}
-    \caption{Schema concettuale del paradigma Actor-Component in Unreal Engine: un singolo Attore funge da contenitore per logica, geometria e collisioni.}
+    \caption{Architettura del paradigma \textit{Actor-Component}: l'Attore funge da contenitore unificatore per le logiche visive, fisiche e di collisione.}
     \label{fig:actor_component}
 \end{figure}
 
+Tenere separata la matematica dell'orbita dal rendering 3D (applicando il noto principio della \textit{Separation of Concerns}) rende il codice molto più pulito e scattante. In questo modo, l'Attore principale opera come centro logico: si concentra solo sulle formule fisiche e calcola come far muovere la vela. Parallelamente, i calcoli geometrici più pesanti per la CPU, come tracciare i raggi di luce per trovare le zone in ombra (\textit{ray casting}), vengono delegati ai singoli componenti. In questo modo le prestazioni del motore grafico vengono sfruttate in modo ottimale.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Il ciclo di vita degli oggetti e il sistema di Tick}
-Il secondo elemento cruciale per la simulazione di sistemi dinamici è la discretizzazione e la gestione del tempo informatico. All'interno di Unreal Engine, il ciclo di vita di ogni Attore è scandito da metodi virtuali specifici che il programmatore può sovrascrivere (\textit{override}) in C++ per iniettare la logica matematica desiderata. I due metodi cardine su cui si basa l'integrazione numerica dell'intero simulatore sono \lstinline|BeginPlay()| e \lstinline|Tick()|.
+\subsection{Il motore fisico: BeginPlay e il ciclo di Tick}
 
-L'inizializzazione del modello fisico avviene all'interno della funzione \lstinline|BeginPlay()|. Invocata una singola volta nell'esatto momento in cui l'Attore viene generato nello spazio (o al lancio della simulazione), questa funzione è deputata all'allocazione delle risorse di memoria, alla definizione delle masse strutturali a secco e, nel caso della vela solare, al calcolo istantaneo della velocità orbitale circolare necessaria a garantire la stabilità kepleriana di partenza, calcolando visivamente l'orbita di parcheggio.
+Il secondo elemento fondamentale per il calcolo orbitale è la gestione del tempo. In Unreal Engine, il ciclo di vita di un oggetto virtuale è governato da ben note funzioni native in C++ che è comunque possibile sovrascrivere tramite \textit{override}. Per implementare la dinamica del veicolo spaziale, il codice si appoggia interamente su due metodi chiave: \lstinline|BeginPlay()| e \lstinline|Tick()| \cite{epicgames_unrealengine}.
 
-Terminata la delicata fase di inizializzazione, il controllo passa alla funzione \lstinline|Tick(float DeltaTime)|, che rappresenta il vero cuore pulsante del \textit{solver} astrodinamico. A differenza dei solutori matematici statici che calcolano traiettorie predeterminate, il motore grafico opera tramite un ciclo continuo (il \textit{game loop}). Ad ogni fotogramma (\textit{frame}) renderizzato dalla scheda video, il motore invoca la funzione \lstinline|Tick| su tutti gli Attori attivi, fornendo come parametro di ingresso il \lstinline|DeltaTime| ($\Delta t$). Tale parametro rappresenta in modo rigoroso l'intervallo temporale, espresso in frazioni di secondo, trascorso dalla precedente esecuzione.
+La fase di avvio del veicolo è interamente affidata al metodo \lstinline|BeginPlay()|. Questo metodo viene eseguito una sola volta,  quando l'oggetto viene creato nel mondo virtuale. Il suo compito è "preparare il terreno": alloca le risorse in memoria, imposta le costanti strutturali (come la massa e l'area) posiziona il modello 3D alla giusta distanza orbitale (es. LEO o GEO), allinea l'orientamento e calcola la velocità tangenziale iniziale necessaria per immetterlo in un'orbita stabile. Infine, prepara i file \textit{CSV} per la registrazione della telemetria.
 
-In ottica astrodinamica, il \lstinline|DeltaTime| assume il ruolo di passo di integrazione (il $dt$ delle equazioni differenziali ordinarie). Ad ogni singola esecuzione del \lstinline|Tick|, l'Attore \lstinline|ASolarSail| esegue sequenzialmente i seguenti calcoli computazionali:
+Conclusa questa fase di avvio, l'esecuzione entra in un ciclo continuo gestito dalla funzione \lstinline|Tick(float DeltaTime)|. Questo ciclo permette al software sviluppato di rielaborare l'intera fisica del veicolo ad ogni singolo \textit{frame} renderizzato sullo schermo. Il parametro in ingresso \lstinline|DeltaTime| ($\Delta t$) indica i millisecondi o secondi trascorsi esattamente dal fotogramma precedente.
+
+Ad ogni iterazione del \lstinline|Tick|, l'oggetto derivato dalla classe Attore \lstinline|ASolarSail| esegue i seguenti passaggi:
+
 \begin{enumerate}
-    \item Interroga i propri componenti geometrici per ricalcolare l'area effettiva esposta al Sole ($A_{\text{eff}}$) basandosi sull'assetto istantaneo.
-    \item Calcola la risultante vettoriale delle forze in gioco, sommando l'attrazione gravitazionale ($\mathbf{a}_g$) e la pressione di radiazione solare ($\mathbf{a}_{\text{SRP}}$).
-    \item Integra le forze ricavando la nuova accelerazione netta, la quale viene moltiplicata per il \lstinline|DeltaTime| per ottenere la variazione di velocità vettoriale ($d\mathbf{v}$).
-    \item Aggiorna la trasformazione spaziale 3D del veicolo in base alla nuova cinematica locale.
+    \item \textbf{Gestione del Tempo:} Verifica il moltiplicatore del tempo (\lstinline|TimeScale|). Per garantire stabilità numerica a velocità estreme, il codice passa in automatico dal motore fisico nativo di Unreal (per \lstinline|TimeScale| $\le 1.1$) a un motore di calcolo cinematico manuale indipendente (per accelerazioni temporali più elevate).
+    \item \textbf{Aggiornamento dell'Assetto:} Ruota dinamicamente la vela nello spazio tridimensionale (\textit{UpdateSailRotation}), assicurandosi che il suo asse principale segua fedelmente la direzione del vettore velocità.
+    \item \textbf{Calcolo delle Forze:} Controlla il \lstinline|SimulationManager| per ricalcolare l'attrazione gravitazionale ($\mathbf{F}_g$) e proietta la griglia di raggi virtuali (\textit{ray casting}) per misurare l'area effettivamente esposta alla luce, ricavando la spinta fotonica ($\mathbf{F}_{\text{SRP}}$). I due vettori vengono sommati per ottenere la Forza Totale risultante.
+    \item \textbf{Integrazione del Moto (Metodo di Eulero):} Nel motore manuale, il codice traduce le forze in movimento vero e proprio. Prima calcola l'accelerazione ($\mathbf{a} = \mathbf{F}/m$). Poi applica le regole base della cinematica usando un tempo "accelerato" (ovvero il \lstinline|DeltaTime| moltiplicato per il \lstinline|TimeScale|): partendo da questo intervallo, aggiorna prima la velocità attuale e la usa per spostare materialmente le coordinate 3D della navicella lungo la sua orbita.
+    \item \textbf{Output e Telemetria:} Conclude il ciclo immagazzinando le metriche di volo nel buffer per il salvataggio su file CSV e aggiornando l'interfaccia di \textit{debug} a schermo.
 \end{enumerate}
+
 
 \begin{figure}[htbp!]
     \centering
-    % \includegraphics[width=0.8\textwidth]{Images/tick_physics_loop.png}
-    \caption{Diagramma di flusso dell'integrazione numerica eseguita a ogni ciclo di \textit{Tick}: il motore grafico funge da solutore iterativo per le equazioni differenziali del moto.}
+    \includegraphics[width=1\textwidth]{Images/tick_physics_loop.jpg}
+    \caption{Diagramma di flusso dell'integrazione numerica eseguita a ogni ciclo di \textit{Tick}.}
     \label{fig:tick_physics_loop}
 \end{figure}
 
-Questo approccio a ciclo continuo garantisce che la simulazione avvenga in modo fluido e interattivo, permettendo all'ingegnere di variare a \textit{runtime} l'inclinazione della vela solare e osservare istantaneamente come tali variazioni modifichino l'accelerazione netta e la conseguente traiettoria del veicolo fotonico.
+Legare i calcoli fisici al normale ciclo di \textit{rendering} attribuisce al simulatore una reattività immediata. L'ingegnere può modificare l'inclinazione della vela a \textit{runtime} e osservare istantaneamente la variazione di spinta e di traiettoria, senza alcun bisogno di interrompere l'esecuzione o ricalcolare il percorso orbitale.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Progettazione Object-Oriented (OOP) del sistema}
-La validità di un simulatore scientifico non risiede unicamente nell'accuratezza matematica delle sue equazioni, ma anche nella robustezza dell'infrastruttura software che le elabora e le espone all'utente. Per gestire l'intrinseca complessità dello scambio vettoriale di quantità di moto, dell'integrazione orbitale in doppia precisione e dell'avanzamento temporale, il codice C++ alla base dell'applicativo è stato strutturato seguendo rigorosamente i principi della Programmazione Orientata agli Oggetti (OOP). 
+\section{Programmazione Orientata agli Oggetti (OOP)}
 
-Questo approccio formale garantisce un'elevata coesione interna ai singoli moduli informatici e un basso accoppiamento (\textit{loose coupling}) tra le classi, favorendo la stabilità del simulatore, la sua facile manutenibilità e la futura espansione del progetto verso scenari interplanetari.
+Un buon simulatore non si basa solo su formule matematiche corrette, ma richiede anche un codice ben strutturato. Per gestire in modo fluido i calcoli complessi e lo scorrere del tempo, il sistema è stato costruito usando la Programmazione Orientata agli Oggetti (OOP).
 
+Adottare questo schema permette di suddividere il programma in blocchi logici distinti, evitando che le varie sezioni del codice si intreccino in modo rigido tra loro. Dividere il codice in componenti indipendenti offre due vantaggi pratici fondamentali:
+
+\begin{itemize}
+    \item \textbf{Manutenzione e Debugging:} Mantenere le componenti isolate semplifica enormemente la ricerca e la correzione degli errori. Se, ad esempio, si riscontrano errori nel calcolo della gravità, è sufficiente intervenire sul singolo blocco responsabile di quella formula, senza dover analizzare o rischiare di compromettere il resto dell'applicativo.
+    \item \textbf{Scalabilità futura:} Un sistema modulare rende il simulatore facilmente espandibile. Se in futuro si volessero aggiungere nuove perturbazioni fisiche basterà aggiungere e collegare una nuova componente di calcolo senza riscrivere o modificare le classi esistenti, lasciando invariata l'integrità del codice già testato e funzionante.
+\end{itemize}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Gerarchia delle classi e diagramma UML}
-La progettazione della gerarchia delle classi parte dall'estensione delle entità base fornite dal framework di Unreal Engine, sfruttando pesantemente il sistema di riflessione nativo (\textit{Reflection System}) del motore tramite le macro C++ \lstinline|UCLASS()| e \lstinline|GENERATED_BODY()|. La struttura architetturale è riassumibile in due rami principali di esecuzione, che comunicano tra loro esclusivamente tramite riferimenti deboli (\textit{pointers}) e interfacce ben definite.
 
-
-
-Come illustrato nel diagramma UML del sistema, le entità fondanti del simulatore derivano direttamente dalla superclasse \lstinline|AActor|:
-\begin{itemize}
-    \item \lstinline|ASimulationManager|: Progettato seguendo una logica operativa affine al \textit{Singleton pattern} (in quanto deve rigorosamente esisterne una sola istanza attiva nel livello simulato), questo Attore funge da orchestratore globale. Esso detiene il controllo centralizzato del tempo di simulazione (\lstinline|TimeScale|), calcola il vettore direzionale globale dell'illuminazione solare e gestisce l'inizializzazione del \textit{Data Logging} persistente. La sua esistenza solleva i singoli veicoli spaziali dal gravoso compito di dover recuperare autonomamente informazioni ambientali condivise.
-    \item \textbf{Gerarchia del Veicolo:} La complessa rappresentazione della vela solare è interamente incapsulata nella classe \lstinline|ASolarSail|. A sua volta, per garantire un'alta specializzazione logica, la classe delega calcoli specifici a componenti software dedicati (derivati da \lstinline|UActorComponent|). Ad esempio, la geometria di impatto e i materiali ottici sono gestiti da componenti strutturali, mentre le vitali variabili di stato orbitale (vettore posizione, vettore velocità, massa a secco) sono mantenute e protette all'interno dell'Attore principale.
-\end{itemize}
-
-Questa divisione netta e gerarchica permette di istanziare molteplici oggetti \lstinline|ASolarSail| simultaneamente all'interno dello stesso scenario (ad esempio, per testare vele competitive con aree geometriche o coefficienti di riflettività diversi) sotto la rigorosa supervisione centralizzata di un unico \lstinline|ASimulationManager|, garantendo la perfetta coerenza temporale dell'intero \textit{framework}.
+Il progetto si basa sull'estensione delle classi native di Unreal Engine tramite le classiche macro (\lstinline|UCLASS()|, \lstinline|GENERATED_BODY()|) \cite{epicgames_unrealengine}. Come mostrato nel diagramma UML (Figura \ref{fig:uml_diagram}), l'architettura poggia sulla classe base \lstinline|AActor| e si divide in due blocchi logici principali:
 
 \begin{figure}[htbp!]
     \centering
-    % \includegraphics[width=0.8\textwidth]{Images/uml_class_diagram.jpg}
-    \caption{Diagramma UML semplificato dell'architettura software: il Simulation Manager orchestra il tempo globale, mentre le istanze Solar Sail gestiscono la cinematica locale.}
+    \includegraphics[width=1\textwidth]{Images/diagramma_uml.jpg}
+    \caption{Diagramma UML semplificato che mostra l'ereditarietà dalla classe \lstinline|AActor| di Unreal Engine e le relazioni tra le classi principali del simulatore.}
     \label{fig:uml_diagram}
 \end{figure}
 
+\begin{itemize}
+    \item \lstinline|ASimulationManager|: È il "regista" della simulazione. Sviluppato seguendo il \textit{Singleton pattern} (un'unica istanza globale), si occupa di gestire tutto l'ambiente spaziale: si occupa della gestione del tempo manipolando il \lstinline|TimeScale|, calcola le costanti di gravità e pressione solare nei vari punti dello spazio, e prepara il sistema di log. Avere un coordinatore centrale evita che ogni singola vela debba ricalcolarsi la posizione della Terra o del Sole a ogni frame, risparmiando  risorse di calcolo.
+    \item \lstinline|ASolarSail|: Rappresenta il veicolo fotonico vero e proprio. Sfrutta il suo modello 3D per intercettare i raggi solari (\textit{ray casting}) e ricalcola le spinte a ogni ciclo, ma soprattutto mantiene i parametri unici e vitali della singola sonda: posizione orbitale, vettore velocità, massa, area esposta e coefficienti ottici.
+\end{itemize}
+
+Avendo diviso in maniera netta l'ambiente globale (\lstinline|ASimulationManager|) dall'attore fisico (\lstinline|ASolarSail|) si ottiene un enorme vantaggio pratico: in questo modo infatti si rende la simulazione nativamente "multi-vela". È possibile inserire nella stessa scena decine di sonde diverse per confrontarne simultaneamente le prestazioni (ad esempio variando l'area o la riflettività), avendo la certezza che tutte quante stiano operando sotto le stesse condizioni ambientali imposte dal \lstinline|ASimulationManager|.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Incapsulamento dei moduli fisici e disaccoppiamento}
-Il principio informatico dell'incapsulamento è stato applicato in modo stringente durante tutto lo sviluppo per proteggere l'integrità dei dati fisici e prevenire l'insorgere di stati del sistema matematicamente incoerenti (come masse strutturali negative o coefficienti ottici sommati superiori a 1, che violerebbero la conservazione dell'energia). 
+\subsection{Protezione dei dati e interfaccia utente in Editor}
 
-Le variabili di stato cruciali per l'integrazione differenziale sono esplicitamente dichiarate con modificatori di accesso \lstinline|private| o \lstinline|protected| all'interno degli \textit{header file} (\lstinline|.h|). L'accesso e la mutazione di tali variabili dall'esterno avvengono esclusivamente tramite metodi \textit{getter} e \textit{setter} specifici. Ad esempio, la richiesta utente di modifica dell'assetto o dell'area della vela durante l'esecuzione invoca automaticamente una routine di validazione interna che ricalcola istantaneamente l'area effettiva esposta ($A_{\text{eff}}$), garantendo che la fisica vettoriale del \lstinline|Tick| non operi mai su dati obsoleti o asincroni.
+Proteggere i parametri del simulatore è fondamentale per evitare calcoli impossibili o crash di sistema. Se l'utente potesse inserire valori casuali (come un'area della vela negativa o una massa pari a zero), il motore fisico andrebbe in errore, violando le leggi della fisica e interrompendo l'esecuzione.
 
-Un aspetto peculiare dell'incapsulamento in ambiente Unreal Engine è l'uso strategico della macro di serializzazione \lstinline|UPROPERTY|. Per permettere all'utente finale (l'ingegnere aerospaziale o l'operatore di missione) di configurare i parametri iniziali senza dover ricompilare il codice sorgente C++, le variabili chiave sono state esposte all'editor visivo tramite specificatori mirati:
+Nel contesto di Unreal Engine, il vero metodo per proteggere le variabili esposte all'utente non avviene solo tramite i classici modificatori C++ (\lstinline|private| o \lstinline|protected|), ma attraverso l'uso strategico della macro \lstinline|UPROPERTY| \cite{epicgames_unrealengine}. Questo costrutto permette di far comunicare il codice sorgente con l'interfaccia grafica dell'Editor, impostando dei vincoli numerici di sicurezza direttamente a livello di codice:
 
-\begin{lstlisting}[language=C++, caption={Esempio di incapsulamento ed esposizione sicura dei parametri fisici in C++}]
-UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Solar Sail|Physics", 
-          meta=(ClampMin="0.01", UIMin="0.01"))
-double DryMass;
+\begin{lstlisting}[language=C++, caption={Esempio reale tratto da \lstinline|SolarSail.h|: l'uso dei metadati \lstinline|ClampMin| e \lstinline|ClampMax| per vincolare matematicamente i parametri della vela nell'interfaccia dell'editor.}]
+UPROPERTY(EditAnywhere,
+          Category = "Sail Parameters | Sail", 
+          meta = (DisplayName = "Area della Vela (m^2)",
+          ClampMin = "9.3",
+          ClampMax = "1672.0")) 
+double SAIL_AREA = 100.0;
 
-UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Solar Sail|Optical", 
-          meta=(ClampMin="0.0", ClampMax="1.0"))
-double SpecularReflectance;
+UPROPERTY(EditAnywhere, 
+          Category = "Sail Parameters | Sail", 
+          meta = (DisplayName = "Massa della Vela (Kg)",
+          ClampMin = "3.2",
+          ClampMax = "307")) 
+double SAIL_MASS = 90.0;
 \end{lstlisting}
 
 \begin{figure}[htbp!]
     \centering
-    % \includegraphics[width=0.6\textwidth]{Images/uproperty_editor.png}
-    \caption{L'esposizione sicura delle variabili di stato tramite \lstinline|UPROPERTY|. L'interfaccia generata automaticamente dall'editor rispetta i vincoli matematici imposti dai metadati C++, impedendo l'inserimento di valori fisicamente invalidi.}
+    \includegraphics[width=0.8\textwidth]{Images/uproperty_editor.png}
+    \caption{L'esposizione sicura delle variabili di stato tramite \lstinline|UPROPERTY|. L'interfaccia generata automaticamente dall'editor rispetta i vincoli imposti dal codice C++, impedendo l'inserimento di valori fisicamente invalidi.}
     \label{fig:uproperty_editor}
 \end{figure}
 
-L'utilizzo dei metadati di restrizione (\lstinline|ClampMin|, \lstinline|ClampMax|) direttamente all'interno della macro rappresenta una trasposizione informatica diretta dei vincoli fisici naturali: impone a livello di editor che la massa non sia mai pari a zero (evitando disastrose divisioni per zero nel calcolo dell'accelerazione $\mathbf{a} = \mathbf{F}/m$) e costringe i coefficienti ottici nel ristretto dominio logico $[0, 1]$.
+L'inclusione dei metadati restrittivi \lstinline|ClampMin| e \lstinline|ClampMax| agisce come scudo: impedisce, ad esempio, l'inserimento di una massa strutturale nulla (\lstinline|0.0|), che causerebbe una divisione per zero fatale nel momento in cui il codice calcola l'accelerazione ($\mathbf{a} = \mathbf{F}/m$). 
 
-Dal punto di vista della logica di esecuzione, il modulo di calcolo orbitale puro (gravitazione universale di Newton) è stato tenuto logicamente disaccoppiato dal modulo ottico perturbativo (\textit{ray casting} e pressione di radiazione fotonica). La funzione \lstinline|Tick()| invoca questi sottomoduli in stretta sequenza, accumulando le singole forze in un vettore \lstinline|NetForce| tridimensionale globale. Questo approccio altamente modulare assicura che in futuro sia possibile implementare nuove perturbazioni astrodinamiche (ad esempio, l'effetto dell'albedo terrestre, l'attrazione gravitazionale di un terzo corpo come la Luna o l'attrito atmosferico residuo per orbite LEO bassissime) semplicemente aggiungendo una nuova funzione matematica alla \textit{pipeline} di sommatoria delle forze, senza dover in alcun modo alterare o riscrivere il delicato nucleo del risolutore cinematico principale.
+Inoltre, per garantire un codice pulito e isolato, le componenti che calcolano la gravità newtoniana (\lstinline|UpdateGravityForce|) e la spinta fotonica (\lstinline|UpdateSolarForce|) operano in modo totalmente autonomo. Le due funzioni calcolano i rispettivi vettori senza mai interferire tra loro, per poi confluire solo nell'ultimo passaggio e formare il vettore della Forza Totale netta.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Il gestore della simulazione (Simulation Manager)}
-Il corretto e coerente svolgimento di una simulazione astrodinamica interattiva richiede un'entità di supervisione astratta che svincoli i singoli veicoli spaziali dalla complessa gestione dell'ambiente condiviso. In ottemperanza ai rigorosi principi di progettazione modulare precedentemente descritti, questo ruolo apicale è ricoperto dalla classe \lstinline|ASimulationManager|. 
 
-Derivata direttamente da \lstinline|AActor| per poter esistere fisicamente all'interno del mondo virtuale, questa classe agisce come \textit{hub} centrale dell'applicativo, garantendo che tutti gli elementi vettoriali dello scenario siano perfettamente sincronizzati rispetto a un unico orologio globale e a un unico sistema di riferimento ambientale condiviso.
+In un simulatore con più elementi in gioco, è fondamentale avere un "regista" che si faccia carico delle regole dell'ambiente, evitando che ogni singolo veicolo debba ricalcolare continuamente gli stessi dati globali condivisi, come la posizione del Sole o l'accelerazione del tempo. Questo è l'esatto compito della classe \lstinline|ASimulationManager|. Estendendo la classe base \lstinline|AActor|, questo modulo centrale funziona come gestore di sistema: detta lo scorrere del tempo per tutti e assicura che ogni elemento sulla scena (che sia la Terra, il Sole o un'intera flotta di vele solari) sia perfettamente sincronizzato all'interno dello stesso spazio virtuale tridimensionale.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Inizializzazione e controllo dello stato globale}
-Il primo e più critico compito del gestore si esplica nella primissima fase di avvio (\lstinline|BeginPlay()|). Il \lstinline|ASimulationManager| è unico responsabile della validazione dello stato iniziale del mondo tridimensionale. Attraverso le potenti librerie di sistema fornite dal motore (come la funzione \lstinline|UGameplayStatics::GetAllActorsOfClass|), il gestore acquisisce automaticamente all'avvio i puntatori di memoria a tutte le istanze di tipo \lstinline|ASolarSail| correntemente presenti nel livello, costruendo un registro dinamico e aggiornato dei veicoli attivi. 
 
-Questa rigida centralizzazione informativa è fondamentale per due aspetti cardine della simulazione fisica:
+Tutto il lavoro del gestore inizia non appena viene fatta partire la simulazione (più precisamente quando viene richiamata la funzione \lstinline|BeginPlay()|). In questa fase, il Manager si occupa di preparare l'ambiente spaziale: posiziona la Terra e il Sole alle corrette distanze e orienta la sorgente luminosa. Grazie all'implementazione del \textit{Singleton pattern}, il Manager non ha bisogno di cercare attivamente i veicoli nella scena; al contrario, sono le singole istanze di \lstinline|ASolarSail| che, al momento dello \textit{spawn}, si collegano autonomamente al gestore centrale.
+Questa architettura decentralizzata garantisce un'elevata modularità e permette alle vele di leggere in tempo reale due parametri chiave condivisi:
+
 \begin{itemize}
-    \item \textbf{Gestione univoca del vettore solare:} Invece di costringere ogni singola vela a ricalcolare pesantemente la posizione spaziale della sorgente luminosa a ogni \textit{Tick}, il \textit{Manager} interroga una singola volta la luce direzionale del livello (che agisce come \textit{proxy} del Sole) ed estrae il versore di propagazione vettoriale della luce ($\mathbf{u}$). Questo singolo vettore viene poi trasmesso a cascata, in modo estremamente efficiente, a tutte le vele solari registrate, garantendo un'assoluta coerenza ottica e geometrica in tutto lo spazio simulato.
-    \item \textbf{Controllo autoritativo del TimeScale:} Il gestore detiene in esclusiva la variabile globale \lstinline|TimeScale|, che rappresenta il fattore numerico di dilatazione temporale. Nelle simulazioni di meccanica orbitale a spinta continua, dove una singola manovra di innalzamento orbitale può durare mesi effettivi, eseguire il programma in rapporto 1:1 rispetto alla realtà è ingegneristicamente inefficace. Il \textit{Manager} funge da \textit{time-keeper} assoluto, inoltrando costantemente il valore di \lstinline|TimeScale| ai sottomoduli fisici per scalare matematicamente il parametro \lstinline|DeltaTime| ($\Delta t$). Ciò permette l'esecuzione fluida della modalità accelerata (\textit{Accelerated Time Mode}) a livello logico, mantenendo però rigorosamente stabile il \textit{framerate} di rendering visivo per l'utente.
+    \item \textbf{Direzione del Sole:} Invece di far cercare il Sole a ogni singola vela, il Manager interroga una volta sola la luce del livello (\lstinline|Directional Light|) per capire da dove arrivano i raggi ($\mathbf{u}$) \cite{epicgames_unrealengine}. Questo dato viene poi letto da tutte le vele, assicurando che la spinta solare sia calcolata con la stessa angolazione per tutti i veicoli in volo, senza sprecare potenza di calcolo.
+    
+    È importante sottolineare che, sebbene Unreal Engine gestisca nativamente l'illuminazione per scopi grafici, esso non prevede calcoli per la pressione di radiazione solare. Per questo motivo, il sistema utilizza la \textit{Directional Light} di Unreal esclusivamente come riferimento geometrico per ottenere la direzione dei raggi, lasciando poi al codice C++ personalizzato il compito di calcolare l'impatto fisico effettivo sulla vela
+    \item \textbf{Gestione del tempo (TimeScale):} Il Manager è responsabile anche della gestione del tempo per tutta la durata della simulazione tramite la variabile \lstinline|TimeScale|. Poiché muoversi nello spazio in tempo reale sarebbe lento e poco utile ai fini di calcolare traiettorie complete, il gestore fornisce alle vele il moltiplicatore necessario per definire la velocità della progressione fisica. Questo permette di simulare mesi di navigazione in pochi minuti, scalando il tempo matematico (\lstinline|DeltaTime|) senza rovinare la fluidità visiva del programma.
 \end{itemize}
 
-Inoltre, lo stato globale gestito centralmente include l'inizializzazione dei complessi flussi di I/O (Input/Output). Il \lstinline|ASimulationManager| apre all'avvio i canali di comunicazione per il \textit{Data Logging}, preparando e formattando i file CSV necessari per la registrazione periodica e persistente della telemetria orbitale, sollevando così la singola classe \lstinline|ASolarSail| dal gravoso onere informatico della gestione del \textit{file system} del sistema operativo ospite.
+Infine, il \lstinline|ASimulationManager| si occupa anche della gestione dei dati persistenti. Esso infatti prepara e pulisce i file CSV per la telemetria. Questo approccio centralizzato evita conflitti nelle operazioni di scrittura e garantisce la raccolta di tutte le informazioni di volo all'interno di un unico archivio strutturato.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Gestione della telecamera e degli input utente}
-Affinché il simulatore sviluppato in Unreal Engine funga da strumento di indagine e validazione utile, l'ingegnere deve poter ispezionare visivamente il veicolo spaziale in ogni istante e alterare i parametri critici della missione a \textit{runtime}. Poiché la vela solare (\lstinline|ASolarSail|) è concettualmente un oggetto passivo, sottoposto unicamente a rigide leggi fisiche esterne, dotarla direttamente di logiche informatiche per la lettura periferica della tastiera o del mouse violerebbe il fondamentale principio architetturale di singola responsabilità (\textit{Single Responsibility Principle}).
+\subsection{Ispezione della scena e gestione degli input}
+Per l'analisi visiva della simulazione, il software si affida al sistema di navigazione libera nativo di Unreal Engine. Non essendo stata impostata una telecamera fissa o vincolata alla struttura della vela, l'operatore può muoversi nello spazio virtuale con totale libertà, in modo analogo a quanto avviene all'interno del \textit{viewport} dell'editor.
 
-Il \lstinline|ASimulationManager| (operando talvolta in concerto con un \lstinline|APawn| specializzato ad esso collegato, configurato come \textit{Player Controller}) si interfaccia quindi in modo esclusivo con il moderno sistema di input del motore (\textit{Enhanced Input System}), traducendo le azioni fisiche dell'utente in precisi comandi vettoriali per la simulazione:
+Questa scelta garantisce flessibilità nell'ispezione dei vari componenti del sistema:
+
 \begin{itemize}
-    \item \textbf{Interazione visiva orbitale:} La telecamera di osservazione non è rozzamente ancorata alla geometria della vela, ma è sofisticatamente vincolata tramite un \lstinline|USpringArmComponent|. Questo braccio virtuale flessibile agisce da perfetto giunto sferico matematico, permettendo all'utente di orbitare visivamente attorno al veicolo (tramite complessi movimenti di \textit{pan}, \textit{tilt} e \textit{zoom}) mantenendo il centro di massa dinamico della vela esattamente al centro dello schermo (\textit{focus point}), il tutto in modo totalmente indipendente dall'enorme velocità orbitale del mezzo spaziale simulato.
-    
-    \item \textbf{Alterazione dinamica dell'assetto e del tempo:} Attraverso specifiche mappature dei tasti configurate nel motore, l'utente può incrementare o decrementare istantaneamente il \lstinline|TimeScale| globale per navigare rapidamente e fluidamente nel tempo di missione. Parallelamente, gli input direzionali continui vengono catturati, filtrati e applicati per variare in tempo reale gli angoli di Eulero di beccheggio (\textit{pitch}) e imbardata (\textit{yaw}) della vela solare. 
+\item \textbf{Navigazione libera:} L'assenza di un vincolo rigido tra la visuale e il veicolo permette di esaminare la vela da qualsiasi angolazione e distanza. Tale libertà è fondamentale per osservare il comportamento dei raggi luminosi durante le fasi di \textit{ray casting} o per monitorare la posizione della sonda rispetto ai riferimenti planetari.
+\item \textbf{Verifica delle routine di debug:} la libertà di movimento permette di ispezionare da ogni angolazione i vettori di forza e i punti di impatto generati dal sistema di \textit{ray casting}. Tale osservazione risulta fondamentale per confermare visivamente che le normali della superficie e la direzione dei fotoni siano calcolate correttamente rispetto alla posizione della sorgente luminosa.
+\item \textbf{Gestione delle scale astronomiche:} data la vastità delle distanze coinvolte, una visuale svincolata permette di passare rapidamente da un'analisi ravvicinata della struttura della vela a una prospettiva globale del sistema. Ciò facilita il monitoraggio della traiettoria e della posizione relativa del veicolo rispetto ai riferimenti planetari.
+\item \textbf{Monitoraggio multi-veicolo:} l'assenza di una telecamera fissa consente di spostarsi agevolmente tra diverse istanze di \lstinline|ASolarSail| eventualmente presenti nella scena. In questo modo è possibile confrontare in tempo reale il comportamento di vele con diverse caratteristiche fisiche (come massa o riflettività) operanti sotto le medesime condizioni ambientali.
 \end{itemize}
 
-
-
-Quando l'utente richiede una variazione di assetto spaziale, il \textit{Manager} invia il comando vettoriale alla vela, la quale, al primissimo ciclo di \lstinline|Tick| utile, ricalcolerà immediatamente il nuovo vettore normale $\mathbf{n}$ locale, la nuova e ridotta area effettiva esposta $A_{\text{eff}}$ e la conseguente variazione dell'accelerazione perturbativa fotonica. Questa catena di eventi informatici garantisce una responsività immediata dell'interfaccia visiva del simulatore, senza mai compromettere la stabilità o la precisione numerica dell'integrazione differenziale in corso in background.
-
-\begin{figure}[htbp!]
-    \centering
-    % \includegraphics[width=0.85\textwidth]{Images/editor_input_camera.jpg}
-    \caption{Visuale dall'editor del simulatore: il sistema di telecamera basato su \textit{SpringArm} permette di ispezionare il veicolo senza interferire con la cinematica orbitale locale.}
-    \label{fig:editor_camera}
-\end{figure}
+Questa distinzione tra l'osservatore e il veicolo risponde a una logica di pulizia del software: permette di analizzare l'intero scenario di test con la massima libertà, lasciando che il codice della classe \lstinline|ASolarSail| si occupi esclusivamente dell'esecuzione dei calcoli fisici senza l'aggiunta di componenti non necessari.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Modellazione del veicolo spaziale (Solar Sail)}
-Se il \lstinline|ASimulationManager| rappresenta indubbiamente il "cervello" ambientale e temporale del simulatore, la complessa classe \lstinline|ASolarSail| ne costituisce il vero e proprio fulcro fisico e cinematico. Progettata ingegneristicamente come una specializzazione avanzata della classe base \lstinline|AActor|, questa entità informatica funge da "gemello digitale" (\textit{digital twin}) della sonda spaziale fisica. Il suo scopo informatico è intrinsecamente duplice: fornire una rappresentazione spaziale estremamente accurata per il calcolo delle delicate intersezioni ottiche fotoniche e incapsulare lo stato dinamico vettoriale del veicolo, evolvendolo coerentemente istante per istante.
+
+Mentre il \lstinline|ASimulationManager| gestisce l'ambiente e il tempo, la classe \lstinline|ASolarSail| costituisce il nucleo fisico della simulazione. Questa entità agisce come il centro logico e fisico del veicolo: utilizza il modello geometrico per calcolare l'impatto dei raggi solari e conserva tutti i dati essenziali della vela, come la velocità, la posizione e la massa.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Rappresentazione geometrica e mesh poligonale}
-La membrana riflettente della vela solare simulata non è trattata informaticamente come una semplice astrazione matematica puntiforme o monodimensionale, bensì come un corpo fisico esteso nello spazio tridimensionale interplanetario. Per modellare con fedeltà questa vasta estensione planare, la classe \lstinline|ASolarSail| impiega al suo interno un \lstinline|UStaticMeshComponent|, il quale ospita e renderizza la geometria tridimensionale del velivolo progettata tramite software CAD.
 
-La scelta progettuale di utilizzare una complessa mesh poligonale invece di forme primitive analitiche è strettamente legata alle stringenti necessità degli algoritmi di calcolo della Pressione di Radiazione Solare (SRP). Dal punto di vista informatico e del \textit{rendering}, l'immensa superficie riflettente è discretizzata e composta da un vasto insieme di triangoli complanari. Questa discretizzazione geometrica avanzata offre vantaggi ingegneristici fondamentali:
+Nel simulatore, la vela solare non viene considerata come un semplice punto matematico, ma come un oggetto fisico con una superficie estesa. Per ottenere questa rappresentazione, la classe \lstinline|ASolarSail| utilizza un componente \lstinline|UStaticMeshComponent|, il quale ospita il modello tridimensionale importato da un software CAD.
+
+L'uso di un modello 3D a poligoni è essenziale per calcolare correttamente la pressione solare. La superficie della vela è infatti suddivisa in migliaia di piccoli triangoli, una scelta costruttiva che offre due vantaggi tecnici immediati:
+
 \begin{itemize}
-    \item \textbf{Estrazione immediata del Vettore Normale ($\mathbf{n}$):} Il motore grafico, essendo nativamente ottimizzato per il calcolo delle normali alle superfici, è in grado di calcolare istantaneamente il vettore matematico perpendicolare alla faccia dei soli poligoni correntemente illuminati. Questo versore dinamico è il parametro cardine indispensabile per l'applicazione della legge del coseno ottica ($A_{\text{eff}} = A \cos\alpha$) e per determinare la precisa direzione tridimensionale della forza risultante riflessa.
-    \item \textbf{Collider avanzato per il Ray Casting:} La mesh poligonale non possiede una valenza unicamente estetica per l'operatore, ma agisce attivamente come un \textit{collider} matematico di precisione. Quando gli infiniti raggi (vettori direzionali continui) generati idealmente dal \textit{Simulation Manager} in direzione della vela intersecano fisicamente i poligoni virtuali, l'efficiente sistema di collisione interno di Unreal Engine restituisce una complessa struttura dati definita \lstinline|FHitResult|. Questa struttura software contiene informazioni numeriche esatte sul punto tridimensionale d'impatto e sull'orientamento spaziale esatto della micro-superficie colpita, permettendo all'algoritmo del simulatore di distinguere con precisione millimetrica tra un'illuminazione frontale pura, un'illuminazione radente inefficace o una condizione totale di ombra auto-indotta.
+    \item \textbf{Estrazione dei vettori normali:} Il motore grafico ricava in automatico il vettore normale (ovvero la direzione perpendicolare) di ogni singolo triangolo colpito dalla luce. Questo dato è fondamentale per stabilire l'angolo di incidenza dei raggi solari e, di conseguenza, calcolare in quale direzione esatta verrà spinta la sonda.
+    \item \textbf{Risoluzione delle intersezioni:} Quando i raggi solari intersecano i poligoni, il sistema di collisione genera un pacchetto di dati (\lstinline|FHitResult|) che contiene le coordinate precise dell'impatto \cite{epicgames_unrealengine}. Questo meccanismo permette all'algoritmo di capire quali zone della vela siano effettivamente illuminate e quali siano in ombra, evitando di calcolare spinte fotoniche sulle parti non direttamente esposte al Sole.
 \end{itemize}
 
 \begin{figure}[htbp!]
     \centering
-    % \includegraphics[width=0.75\textwidth]{Images/sail_wireframe.png}
-    \caption{Visualizzazione \textit{wireframe} (a fil di ferro) della membrana solare simulata in Unreal Engine. L'alta densità poligonale garantisce una discretizzazione spaziale eccellente per l'accuratezza degli algoritmi di \textit{Ray Casting}.}
+    \includegraphics[width=0.9\textwidth]{Images/sail_wireframe.jpg}
+    \caption{Visualizzazione \textit{wireframe} (a fil di ferro) della membrana solare simulata. La suddivisione in triangoli permette di calcolare la spinta fotonica in modo dettagliato su tutta la superficie.}
     \label{fig:sail_wireframe}
 \end{figure}
 
-Infine, per garantire il massimo rigore sia visivo che prestazionale durante la simulazione in tempo reale, al componente geometrico principale viene applicato uno specifico \textit{Material Instance} dinamico programmato nel \textit{Material Graph} del motore. Questo \textit{material shader} fotorealistico è configurato rigorosamente in modalità \textit{Two-Sided} (doppia faccia fisica): un lato simula visivamente e computazionalmente il sottile film di alluminio altamente riflettente (su cui l'algoritmo calcola l'effettiva spinta propulsiva), mentre il lato opposto rappresenta il nudo polimero di supporto (es. Kapton o Mylar), caratterizzato da un'alta emissività termica e nullo potere propulsivo fotonico.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Configurazione del profilo di riflettenza}
+
+Un aspetto importante nella modellazione del veicolo riguarda il comportamento ottico delle due facce della vela. Nelle missioni reali, le sonde solari sono asimmetriche: presentano un lato frontale altamente riflettente e un retro, del tutto incapace di generare spinta fotonica.
+
+Il simulatore replica questa dinamica offrendo un parametro per la gestione della doppia faccia (\textit{Two-Sided}), modificabile direttamente dall'interfaccia. Questa opzione permette di testare due scenari distinti:
+
+\begin{itemize}
+    \item \textbf{Modalità realistica:} il sistema distingue logicamente il fronte dal retro calcolando il prodotto scalare tra la normale della vela e la direzione della luce. Se la matematica indica che i fotoni stanno colpendo la faccia posteriore, l'algoritmo azzera in automatico la spinta.
+    \item \textbf{Modalità simmetrica:} la vela viene trattata come un corpo capace di generare propulsione su entrambi i lati. Pur essendo fisicamente meno realistica, questa opzione è utile per testare manovre teoriche o materiali sperimentali senza rischiare la perdita improvvisa di spinta.
+\end{itemize}
+
+Questa flessibilità permette di osservare direttamente come un errato orientamento del veicolo, con la conseguente esposizione del lato sbagliato al Sole, comporti l'immediato azzeramento della propulsione e modifichi drasticamente la traiettoria orbitale.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{L'abbandono della fisica nativa e l'integrazione numerica}
-Affinché il modello geometrico tridimensionale precedentemente descritto si comporti coerentemente come un corpo fisico reale soggetto unicamente alle immani leggi della dinamica orbitale kepleriana, la classe \lstinline|ASolarSail| deve necessariamente essere arricchita con un esteso set di variabili di stato vettoriali e costanti strutturali, tutte opportunamente incapsulate e protette.
+\subsection{Sistema fisico ibrido e calcolo in doppia precisione}
 
-Il punto di svolta architetturale più critico di tutto il simulatore risiede nella deliberata scelta ingegneristica di **disattivare completamente** il motore fisico predefinito nativo di Unreal Engine (conosciuto come PhysX nelle vecchie versioni, o Chaos Physics nelle attuali). Tali motori commerciali di \textit{rigid body dynamics}, pur essendo eccellenti per simulare la gravità terrestre costante a livello del suolo o le collisioni tra automobili in un videogioco, sono informaticamente basati su approssimazioni a singola precisione (\lstinline|float|) e su solutori Euleriani elementari. Essi risultano totalmente inadeguati e imprecisi se scalati sulle enormi distanze interplanetarie, collassando vittima di devastanti errori di arrotondamento (\textit{floating-point underflow}) se applicati all'integrazione di orbite geocentriche.
+Per assicurare che il veicolo rispetti le leggi fisiche indipendentemente dall'accelerazione temporale impostata, la classe \lstinline|ASolarSail| adotta un sistema di calcolo ibrido.
 
-Per bypassare questo limite commerciale, la classe \lstinline|ASolarSail| implementa da zero una propria rigorosa struttura dati cinematica personalizzata basata esclusivamente su primitive a **doppia precisione matematica** (a 64-bit). All'interno dell'Attore sono definiti i seguenti raggruppamenti logici di proprietà fisiche:
+I motori fisici come \textit{Chaos Physics} di Unreal Engine sono ottimizzati per il tempo reale, ma operando con numeri a singola precisione (\lstinline|float|) possono generare problemi di stabilità se sottoposti a forti accelerazioni temporali su scale interplanetarie \cite{epicgames_unrealengine}. Per ovviare al problema, il codice valuta ad ogni ciclo di \lstinline|Tick| il moltiplicatore del tempo (\lstinline|TimeScale|):
+
 \begin{itemize}
-    \item \textbf{Parametri Strutturali Nominali:} Includono la massa a secco in kg del \textit{payload} scientifico e dei pesanti bracci telescopici in fibra di carbonio, la massa specifica infinitesimale del film polimerico riflettente e l'area fisica totale nominale della vela ($A$). Questi rigidi valori vengono utilizzati unicamente durante la fase di \lstinline|BeginPlay| per calcolare e allocare in memoria la massa totale inerziale costante ($m$) del veicolo.
-    \item \textbf{Coefficienti Ottici Realistici:} Variabili a virgola mobile a doppia precisione (rigorosamente vincolate tra i valori logici 0.0 e 1.0) che definiscono le precise percentuali di riflettività speculare pura ($\rho_s$), riflettività diffusa (\textit{scattering} lambertiano, $\rho_d$) e totale assorbimento termico ($\alpha_a$). Questo set di coefficienti permette all'operatore informatico di passare quasi istantaneamente da un modello di simulazione ideale teorico a uno altamente degradato o fotorealisticamente accurato.
-    \item \textbf{Vettori Cinematici di Stato:} Per la corretta esecuzione dell'integrazione numerica discreta delle equazioni del moto di Newton, la classe mantiene costantemente instanziati in memoria RAM tre fondamentali vettori a doppia precisione (\lstinline|FVector3d| o \lstinline|FVector64| a seconda della build): l'assoluto vettore Posizione Globale $\mathbf{r}$ (rispetto al centro di massa del corpo attrattore planetario), l'istantaneo vettore Velocità orbitale $\mathbf{v}$ e la risultante vettoriale dell'accelerazione $\mathbf{a}$.
+    \item \textbf{Modalità nativa (TimeScale $\le$ 1.1):} a velocità normale, il simulatore si affida al motore fisico di Unreal, applicando vettori di forza continui alla mesh per sfruttarne le ottimizzazioni predefinite.
+    \item \textbf{Modalità cinematica manuale (TimeScale > 1.1):} quando la progressione temporale viene accelerata, il software disattiva automaticamente la simulazione fisica nativa. Il calcolo passa a un solutore matematico personalizzato che aggiorna la posizione dell'attore (\lstinline|SetActorLocation|) aggirando i limiti del motore grafico.
 \end{itemize}
 
-Durante l'esecuzione di ogni singolo e ravvicinato ciclo di \lstinline|Tick|, questi tre massicci gruppi di proprietà convergono in un'unica complessa operazione differenziale: l'area geometrica e i coefficienti ottici determinano il vettore della forza fotonica incidente; la massa strutturale permette di convertire immediatamente tale forza repulsiva in accelerazione vettoriale locale ($\mathbf{a} = \mathbf{F}/m$) sommandola al massiccio contributo gravitazionale dipendente dalla stringente posizione $\mathbf{r}$; infine, l'algoritmo di integrazione numerica personalizzato (che sarà approfonditamente discusso nel Capitolo 4) aggiorna matematicamente la nuova velocità $\mathbf{v}$ e la conseguente posizione spaziale orbitale.
+Questo solutore manuale si basa su un'architettura dati a doppia precisione (64 bit), obbligatoria per evitare errori di arrotondamento. Il sistema gestisce l'area e la massa della vela (parametri strutturali), i coefficienti ottici (per modulare l'efficienza riflettente della membrana) e tre vettori fondamentali: posizione (\textbf{r}), velocità (\textbf{v}) e accelerazione (\textbf{a}). 
 
-Questa fusione profonda e inestricabile tra geometria pura (la mesh poligonale) e matematica avanzata (vettori a 64-bit e complessi coefficienti ottici) all'interno di un'unica classe C++ estremamente coesa, dimostra inequivocabilmente l'efficacia e l'assoluta necessità del paradigma \textit{Object-Oriented} nella moderna progettazione aerospaziale: il veicolo simulato è un'entità informatica autonoma, autosufficiente, che incapsula al proprio interno tutto l'hardware e il software di cui ha vitale bisogno per "subire" coerentemente le immani leggi dell'universo virtuale orchestrato dal Simulation Manager.
+Ad ogni ciclo di calcolo, il solutore somma le forze in gioco (fotonica e gravitazionale) per ricavare l'accelerazione netta del veicolo; successivamente, integra questo dato nel tempo per calcolare la nuova velocità istantanea e, infine, aggiornare la posizione esatta della sonda nello spazio tridimensionale.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
