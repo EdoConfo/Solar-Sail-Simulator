@@ -1,0 +1,39 @@
+\chapter{Conclusioni e Sviluppi Futuri}
+\label{chap:conclusioni}
+
+Il presente lavoro di tesi si è posto l'obiettivo di esplorare, progettare e validare un'architettura software per la simulazione \textit{high-fidelity} della propulsione spaziale a vela solare, sfruttando le potenzialità di rendering e calcolo in tempo reale offerte da Unreal Engine 5. 
+
+La sfida principale del progetto risiedeva nel far coesistere le esigenze computazionali di un motore grafico, tipicamente ottimizzato per l'intrattenimento e limitato da approssimazioni fisiche a breve raggio, con il rigore matematico e le scale astronomiche richieste dalla meccanica orbitale. I risultati ottenuti confermano che questo connubio non solo è possibile, ma offre vantaggi significativi in termini di visualizzazione e analisi dei dati.
+
+\section{Sintesi del Lavoro e Obiettivi Raggiunti}
+
+Durante lo sviluppo del simulatore, sono state affrontate e risolte diverse criticità intrinseche alla simulazione spaziale:
+\begin{itemize}
+    \item \textbf{Gestione delle Scale Astronomiche:} Il passaggio da unità di misura convenzionali (metri/centimetri) a distanze planetarie ha richiesto la progettazione di un \textit{Simulation Manager} custom. Attraverso l'utilizzo integrato di tipi di dato a doppia precisione (Double/FVector3d) e fattori di conversione dinamici, è stato possibile rappresentare l'orbita terrestre e la distanza dal Sole annullando i classici errori di \textit{floating-point overflow}.
+    \item \textbf{Motore Cinematico Ibrido:} Si è dimostrato che il motore fisico nativo (\textit{PhysX/Chaos}), sebbene eccellente per interazioni standard, risulta inadeguato ad alti \textit{TimeScale}. L'implementazione di una modalità cinematica manuale basata sull'integrazione di Eulero ha permesso di preservare la precisione orbitale kepleriana anche durante l'accelerazione temporale estrema (fino a $1000\times$).
+    \item \textbf{Modello Ottico-Propulsivo:} La pressione di radiazione solare è stata simulata con successo tramite algoritmi di \textit{Ray Casting}. L'architettura sviluppata calcola in tempo reale la dispersione dell'energia in funzione dell'orientamento vettoriale della vela, rispettando rigorosamente la Legge del Coseno di Lambert.
+    \item \textbf{Pipeline Telemetrica e Validazione:} La realizzazione di un sistema di esportazione dati in formato CSV, unita al post-processing analitico in Python, ha fornito gli strumenti per dimostrare quantitativamente l'efficacia del simulatore. Le tre validazioni condotte (espansione orbitale, efficienza ottica e zone d'ombra) hanno restituito curve perfettamente sovrapponibili ai modelli teorici della letteratura aerospaziale.
+\end{itemize}
+
+In conclusione, il simulatore sviluppato non rappresenta un semplice esercizio di computer grafica, ma si configura come un vero e proprio \textit{framework} analitico, capace di simulare dinamiche complesse e di esportare telemetrie affidabili.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Sviluppi Futuri}
+
+Sebbene l'architettura attuale produca risultati fisicamente accurati, il progetto si presta a numerose espansioni che potrebbero trasformarlo in uno strumento ancora più avanzato per l'analisi preliminare delle missioni spaziali. Di seguito vengono presentate le principali direttrici di sviluppo futuro.
+
+\subsection{Transizione a un Sistema N-Body}
+L'attuale modello di calcolo della gravità è basato su un problema a due corpi (Terra-Vela). Un naturale sviluppo futuro consisterebbe nell'ampliare il \textit{Simulation Manager} per supportare un sistema \textit{N-Body}. L'introduzione della gravità lunare e dell'influenza gravitazionale diretta del Sole permetterebbe di simulare traiettorie interplanetarie complesse, calcolando i punti di Lagrange e le perturbazioni gravitazionali sul lungo periodo.
+
+\subsection{Modelli di Controllo Attivo dell'Assetto (AOCS)}
+Attualmente, la vela solare mantiene un assetto pre-calcolato o fisso rispetto al proprio vettore velocità. Un passo successivo consisterebbe nell'implementare algoritmi di controllo attivo (come controllori PID) per governare dinamicamente l'inclinazione della vela. Questo permetterebbe agli utenti o a script di automazione di pianificare vere e proprie manovre orbitali, ottimizzando l'angolo di incidenza ($Cos\theta$) per massimizzare l'innalzamento del perigeo o per frenare la sonda ed eseguire manovre di de-orbiting.
+
+\subsection{Simulazione Fisica dei Tessuti (Chaos Cloth)}
+Per necessità prestazionali, la vela solare è stata modellata come un \textit{Rigid Body}. Nella realtà, le vele solari sono costituite da film polimerici ultrasottili (es. Kapton o Mylar) supportati da bracci strutturali, soggetti a flessioni e deformazioni termomeccaniche. Sfruttando il sistema \textit{Chaos Cloth} integrato in Unreal Engine 5, si potrebbe simulare il comportamento dinamico del tessuto durante la fase di dispiegamento (\textit{deployment}) in orbita e analizzare come le micro-deformazioni della superficie alterino l'efficienza della riflessione speculare.
+
+\subsection{Modellazione delle Perturbazioni Ambientali}
+Per aumentare ulteriormente la fedeltà (high-fidelity) della simulazione nelle orbite basse (LEO), si potrebbe integrare un modello di densità atmosferica (es. \textit{NRLMSISE-00}). Questo consentirebbe di calcolare la resistenza aerodinamica residua (\textit{Atmospheric Drag}), creando uno scenario competitivo in cui la spinta dei fotoni solari deve combattere contro l'attrito atmosferico per mantenere la sonda in orbita. Sarebbe inoltre possibile includere il calore radiativo riflesso dalla Terra (Albedo) come fonte secondaria, seppur debole, di pressione propulsiva.
+
+\subsection{Sviluppo di un'Interfaccia Utente (Mission Planner)}
+Sotto il profilo software, l'ultimo traguardo riguarderebbe la creazione di una \textit{Graphical User Interface} (GUI) avanzata all'interno del simulatore. Tramite i \textit{Widget Blueprints} di Unreal Engine, si potrebbe dotare il software di un "Mission Planner" in cui l'utente può inserire dinamicamente i parametri di partenza (massa, area della vela, tipo di materiale, data gregoriana per calcolare l'esatta posizione del Sole), tracciare rotte ideali e comparare i risultati telemetrici direttamente a schermo senza necessità di script esterni.
