@@ -86,24 +86,29 @@ def plot_data(csv_files):
 
     # --- FORMATTAZIONE GRAFICI ---
     
+    # Ingrandiamo i numeri sugli assi (i "tick")
+    plt.rc('xtick', labelsize=14) 
+    plt.rc('ytick', labelsize=14)
+
     # Grafico Superiore (Distanza)
-    ax1.set_ylabel('Distanza Terra (Km)', fontsize=12)
-    ax1.set_title('Analisi Orbita Vela Solare', fontsize=14)
+    ax1.set_ylabel('Distanza Terra (Km)', fontsize=16, fontweight='bold')
+    ax1.set_title('Analisi Espansione Orbitale della Vela Solare', fontsize=20, fontweight='bold')
     ax1.grid(True, which='both', linestyle='--', alpha=0.7)
-    ax1.legend(loc='upper left')
+    ax1.legend(loc='upper left', fontsize=14)
 
     # Grafico Inferiore (Velocità)
-    ax2.set_xlabel('Tempo Simulazione (s)', fontsize=12)
-    ax2.set_ylabel('Velocità (Km/s)', fontsize=12)
+    ax2.set_xlabel('Tempo Simulazione (s)', fontsize=16, fontweight='bold')
+    ax2.set_ylabel('Velocità (Km/s)', fontsize=16, fontweight='bold')
     ax2.grid(True, which='both', linestyle='--', alpha=0.7)
 
     # Salvataggio su file
     os.makedirs(OUTPUT_PLOT_DIR, exist_ok=True)
     output_path = os.path.join(OUTPUT_PLOT_DIR, 'SolarSailData_Plot.png')
     
-    plt.tight_layout()
-    plt.savefig(output_path, dpi=150)
-    print(f"Grafico salvato in: {output_path}")
+    # Tight layout con un po' di margine in più per non tagliare i font grandi
+    plt.tight_layout(pad=2.0)
+    plt.savefig(output_path, dpi=300) # Alzato il DPI da 150 a 300 per qualità tesi!
+    print(f"Grafico salvato ad alta risoluzione in: {output_path}")
     
     # Mostra a schermo
     plt.show()
