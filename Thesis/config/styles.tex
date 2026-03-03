@@ -1,13 +1,12 @@
 % --- GEOMETRIA ---
 \geometry{top=3.5cm, bottom=2.5cm, left=3cm, right=2.5cm}
 
-% --- HEADER E FOOTER (Ottimizzato per Fronte-Retro) ---
+% --- HEADER E FOOTER (Ottimizzato per Solo Fronte) ---
 \pagestyle{fancy}
 \fancyhf{}
 \setlength{\headheight}{14.5pt} 
-\fancyhead[RO,LE]{\textbf{\thepage}}   
-\fancyhead[LO]{\textbf{\leftmark}}     
-\fancyhead[RE]{\textbf{\rightmark}}    
+\fancyhead[R]{\textbf{\thepage}}       % Numero a destra in alto
+\fancyhead[L]{\textbf{\leftmark}}      % Nome capitolo a sinistra in alto
 
 % --- GRAFICI ---
 \pgfplotsset{compat=1.18}

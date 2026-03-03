@@ -1,9 +1,9 @@
-\definecolor{tokyobg}{HTML}{24283b}
-\definecolor{tokyotxt}{HTML}{a9b1d6}
-\definecolor{tokyokw}{HTML}{bb9af7}
-\definecolor{tokyocom}{HTML}{565f89}
-\definecolor{tokyostr}{HTML}{9ece6a}
-\definecolor{tokyonum}{HTML}{7dcfff}
+\definecolor{tokyobg}{HTML}{f5f5f5}  % Sfondo grigio finissimo stile VS Code
+\definecolor{tokyotxt}{HTML}{000000} % Testo base nero assoluto
+\definecolor{tokyokw}{HTML}{0000ff}  % Keyword in Blu acceso tipico C++ (Visual Studio)
+\definecolor{tokyocom}{HTML}{008000} % Commenti in Verde scuro (VS standard)
+\definecolor{tokyostr}{HTML}{a31515} % Stringhe in Rosso Mattone
+\definecolor{tokyonum}{HTML}{2b91af} % Numeri/Tipi speciali in Ciano scuro
 \lstset{
     language=C++,
     backgroundcolor=\color{tokyobg},
@@ -12,10 +12,16 @@
     commentstyle=\itshape\color{tokyocom},
     stringstyle=\color{tokyostr},
     numbers=left,
-    numberstyle=\tiny\color{tokyonum},
+    numberstyle=\scriptsize\color{tokyonum},
     frame=single,
-    rulecolor=\color{tokyokw}, % Bordo dello stesso viola delle keyword
+    rulecolor=\color{tokyobg},    % Bordo dello stesso colore dello sfondo
+    xleftmargin=0pt,              % Togliamo l'offset per allinearlo al testo normale
+    framexleftmargin=0.5em,       % Leggero padding sinistro per non far attaccare il testo
+    framexrightmargin=0.5em,      
+    framextopmargin=0.5em,        
+    framexbottommargin=0.5em,     % Aggiunge padding sotto
     breaklines=true,
+    keepspaces=true,
     tabsize=4,
     showstringspaces=false,
     morekeywords={UPROPERTY, UCLASS, GENERATED_BODY, FVector3d, FVector, FRotator, ASimulationManager, ASolarSail, TObjectPtr, UStaticMeshComponent, BlueprintType, UENUM, UMETA}
