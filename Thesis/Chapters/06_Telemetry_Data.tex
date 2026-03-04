@@ -53,7 +53,7 @@ if (DistSq > (ThresholdUU * ThresholdUU)) {
 }
 \end{lstlisting}
 
-La scia non memorizza la posizione a ogni singolo \textit{Tick}, ma registra un nuovo vertice solo quando la vela ha percorso una distanza minima prestabilita, indicata dalla variabile \lstinline|TrailPointMinDistance|. Inoltre, l'array \lstinline|OrbitHistory| è limitato a un numero massimo di punti (\lstinline|MaxTrailPoints|); raggiunto il limite, il vertice più vecchio viene eliminato tramite \lstinline|RemoveAt(0)|. Una volta accumulati nell'array, i punti devono essere uniti per formare la linea continua dell'orbita. Per evitare che lo schermo si riempia di linee opache e visivamente piatte, il sistema calcola "l'età" di ogni singolo segmento basandosi sulla sua posizione all'interno della coda (tramite la variabile \lstinline|Alpha|). Sfruttando questo valore percentuale, la funzione \lstinline|FMath::Lerp| esegue una modifica cromatica: i segmenti più vecchi (in testa all'array) vengono disegnati con un colore scuro e semi-trasparente, mentre quelli appena generati (vicino alla sonda) vengono colorati di  un ciano brillante. Questo approccio matematico crea un perfetto "effetto cometa", simulando la dissipazione della scia nel vuoto e rendendo chiara la direzione del moto a colpo d'occhio.
+La scia non memorizza la posizione a ogni singolo \textit{Tick}, ma registra un nuovo vertice solo quando la vela ha percorso una distanza minima prestabilita, indicata dalla variabile \lstinline|TrailPointMinDistance|. Inoltre, l'array \lstinline|OrbitHistory| è limitato a un numero massimo di punti (\lstinline|MaxTrailPoints|); raggiunto il limite, il vertice più vecchio viene eliminato tramite \lstinline|RemoveAt(0)|. Una volta accumulati nell'array, i punti devono essere uniti per formare la linea continua dell'orbita. Per evitare che lo schermo si riempia di linee opache e visivamente piatte, il sistema calcola "l'età" di ogni singolo segmento basandosi sulla sua posizione all'interno della coda (tramite la variabile \lstinline|Alpha|). Sfruttando questo valore percentuale, la funzione \lstinline|FMath::Lerp| esegue una modifica cromatica: i segmenti più vecchi (in testa all'array) vengono disegnati con un colore scuro e semi-trasparente, mentre quelli appena generati (vicino alla sonda) vengono colorati di un ciano brillante. Questo approccio matematico crea un perfetto "effetto cometa", simulando la dissipazione della scia nel vuoto e rendendo chiara la direzione del moto a colpo d'occhio \cite{epicgames_unrealengine}.
 
 \begin{lstlisting}[language=C++, caption={Rendering e interpolazione cromatica della scia orbitale in \lstinline|SolarSail.cpp|.}]
 // Disegno dei segmenti della scia
@@ -139,7 +139,7 @@ ValidSails.Sort([](const ASolarSail& A, const ASolarSail& B) {
 });
 \end{lstlisting}
 
-Per ogni vela individuata nella scena, l'algoritmo assembla un blocco di stringhe che funziona come vero e proprio pannello di controllo in cui i dati spaziali (Velocità, Distanza, Forza Solare e Area) vengono formattati e impaginati a colonna. 
+Per ogni vela individuata nella scena, l'algoritmo assembla un blocco di stringhe che funziona come un vero e proprio pannello di controllo in cui i dati spaziali (Velocità, Distanza, Forza Solare e Area) vengono formattati e impaginati a colonna. 
 Per massimizzare la leggibilità, l'efficienza propulsiva viene tradotta in un indicatore grafico (\lstinline|AsciiBar|) che calcola il rapporto percentuale tra fotoni attivi e totali, riempiendo proporzionalmente una barra da $10$ segmenti visivi. Il blocco di testo viene infine inserito nel ciclo di rendering del motore tramite \lstinline|AddOnScreenDebugMessage|, assegnando colori differenti per evidenziare eventuali cali di efficienza o l'ingresso in una zona d'ombra planetaria.
 
 \begin{figure}[htbp!]
@@ -224,7 +224,7 @@ Il formato scelto per l'esportazione è il CSV, uno standard leggero, scalabile 
 
 \subsection{Ottimizzazione I/O e gestione del Buffer temporale}
 
-Salvare fisicamente file su un disco rigido è un'operazione notoriamente lenta. Se il motore grafico tentasse di eseguire una scrittura sul disco 60 volte al secondo (per ogni singolo \textit{Tick} e per ogni singola vela), il sistema andrebbe incontro a un gravissimo rallentamento, con un impatto devastante sulle prestazioni e sulla fluidità della simulazione, ma soprattutto compromettendo la precisione del solutore cinematico.
+Salvare fisicamente file su un disco rigido è un'operazione notoriamente lenta. Se il motore grafico tentasse di eseguire una scrittura sul disco 60 volte al secondo (per ogni singolo \textit{Tick} e per ogni singola vela), il sistema andrebbe incontro a un gravissimo rallentamento, con un impatto devastante sulle prestazioni e sulla fluidità della simulazione, compromettendo, soprattutto, la precisione del solutore cinematico \cite{acton2014data, meyers2013cpu}.
 
 Per ovviare a questo grave problema di ottimizzazione del software, la funzione \lstinline|AppendDataToCSV()| implementa una tecnica di \textit{buffering} temporale:
 
@@ -292,14 +292,14 @@ fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10), sharex=True)
 data = pd.read_csv(csv_path, skipinitialspace=True)
 \end{lstlisting}
 
-Per il grafico risultante, lo script impiega \lstinline|matplotlib| per generare due grafici impilati verticalmente: il primo dedicato alla distanza radiale e il secondo alla velocità orbitale, entrambi in funzione del tempo:
+Per la visualizzazione finale, lo script impiega \lstinline|matplotlib| per generare due grafici impilati verticalmente: il primo dedicato alla distanza radiale e il secondo alla velocità orbitale, entrambi in funzione del tempo:
 
 \begin{enumerate}
     \item \textbf{Grafico della Distanza Radiale:} Traccia la distanza in chilometri tra la vela e il centro della Terra. Questa curva rappresenta lo strumento primario per misurare l'efficacia propulsiva della vela: permette di visualizzare a colpo d'occhio il progressivo innalzamento dell'orbita generato dalla spinta continua e cumulativa dei fotoni solari sulla membrana.
-    \item \textbf{Grafico della Velocità Orbitale:} Mappa le oscillazioni cinetiche del veicolo. Oltre a confermare il rispetto delle leggi kepleriane (la sonda decelera allontanandosi dal pianeta e accelera riavvicinandosi), l'analisi di questa linea rivela come la pressione di radiazione applichi costantemente nuova energia nel sistema, alterando nel tempo il bilancio complessivo della vela rispetto a quello di un normale satellite.
+    \item \textbf{Grafico della Velocità Orbitale:} Mappa le oscillazioni cinetiche del veicolo. Oltre a confermare il rispetto delle leggi kepleriane (la sonda decelera allontanandosi dal pianeta e accelera riavvicinandosi), l'analisi di questa linea rivela come la pressione di radiazione applichi costantemente nuova energia nel sistema, alterando nel tempo il bilancio complessivo della vela rispetto a quello di un normale satellite \cite{curtis2005orbital, mcinnes1999solar}.
 \end{enumerate}
 
-Il vero vantaggio di questo approccio a script risiede nella sua nativa rappresentazione di grafici multi-vela. In una simulazione in cui si stanno per esempio eseguendo tre vele solari caratterizzate da tre coefficienti di riflettività differenti, lo script è in grado di sovrapporre automaticamente le tre curve di distanza e le tre curve di velocità, assegnando a ciascuna un colore diverso (\lstinline|['b', 'g', 'r', 'c', 'm', 'y', 'k']|) e compilando automaticamente la legenda a schermo per facilitare il confronto visivo.
+Il vero vantaggio di questo approccio a script risiede nella sua nativa rappresentazione di grafici multi-vela. In uno scenario che comprende, ad esempio, tre vele solari caratterizzate da tre coefficienti di riflettività differenti, lo script è in grado di sovrapporre automaticamente le tre curve di distanza e le tre curve di velocità, assegnando a ciascuna un colore diverso (\lstinline|['b', 'g', 'r', 'c', 'm', 'y', 'k']|) e compilando automaticamente la legenda a schermo per facilitare il confronto visivo.
 
 \begin{lstlisting}[language=Python, caption={Ciclo di sovrapposizione multi-veicolo e plotting vettoriale.}]
 # Colori ciclici per distinguere visivamente le diverse vele
@@ -323,7 +323,7 @@ for idx, csv_path in enumerate(csv_files):
 # [...] (formattazione griglia, etichette e salvataggio dell'immagine PNG)
 \end{lstlisting}
 
-In questo modo, l'utente ottiene un quadro completo immediato, pulito ed esportabile per la stesura di \textit{paper} accademici o analisi prestazionali sui materiali della vela.
+In questo modo, l'utente ottiene un quadro completo, immediato, pulito ed esportabile per la stesura di \textit{paper} accademici o analisi prestazionali sui materiali della vela.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

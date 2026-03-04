@@ -32,7 +32,7 @@ Integrando questa equazione tra lo stato iniziale (velocità $v_0$ e massa $m_0$
     \int_{v_0}^{v_f} dv = -v_e \int_{m_0}^{m_f} \frac{1}{m} dm
 \end{equation}
 
-Il risultato di questa integrazione è la celebre equazione del razzo di Tsiolkovsky, formulata alla fine del XIX secolo dal fisico russo Konstantin Tsiolkovsky, che quantifica la variazione di velocità totale $\Delta v$ ottenibile dal razzo in funzione della massa iniziale, finale e della velocità di scarico:
+Il risultato di questa integrazione è la celebre equazione del razzo di Tsiolkovsky, formulata alla fine del XIX secolo dal fisico russo Konstantin Tsiolkovsky, che quantifica la variazione di velocità totale $\Delta v$ ottenibile dal razzo in funzione della massa iniziale, di quella finale e della velocità di scarico \cite{curtis2005orbital}:
 
 \begin{equation} \label{eq:tsiolkovsky}
     \Delta v = v_e \ln\left(\frac{m_0}{m_f}\right) = I_{sp} \cdot g_0 \cdot \ln\left(\frac{m_0}{m_f}\right)
@@ -43,7 +43,7 @@ dove i parametri fondamentali sono così definiti:
     \item $v_e$ è la velocità effettiva di scarico dei gas.
     \item $I_{sp} = v_e / g_0$ è l'impulso specifico del propulsore, misurato in secondi, che rappresenta l'efficienza con cui la massa propellente viene convertita in spinta.
     \item $g_0$ è l'accelerazione di gravità standard al livello del mare ($9.80665 \, \text{m/s}^2$).
-    \item $m_0$ è la massa iniziale al lancio, data dalla somma della massa a vuoto (struttura e \textit{payload}) e dalla massa del propellente.
+    \item $m_0$ è la massa iniziale al lancio, data dalla somma della massa a vuoto (struttura e \textit{payload}) e della massa del propellente.
     \item $m_f$ è la massa finale, ovvero la sola massa a vuoto una volta esaurito il propellente.
 \end{itemize}
 
@@ -59,7 +59,7 @@ L'equazione \ref{eq:tsiolkovsky} mette in luce un problema fondamentale per l'in
 Questa relazione esponenziale è spesso definita come "tirannia dell'equazione del razzo". Essa dimostra che la massa iniziale richiesta cresce in modo esponenziale rispetto alla variazione di velocità desiderata \cite{mcinnes1999solar}. 
 
 Attraverso un esempio pratico è possibile chiarire questo concetto.
-Se si desidera raddoppiare il $\Delta v$ di una missione mantenendo costante il carico utile e il tipo di motore, non è sufficiente raddoppiare il propellente. Sarà necessario trasportare una quantità di carburante esponenzialmente maggiore, poiché il propulsore dovrà spendere energia per accelerare anche il carburante stesso che non è stato ancora espulso. Per le missioni interplanetarie dirette verso destinazioni distanti dal sistema solare, i requisiti di $\Delta v$ rendono il rapporto $\Lambda$ talmente elevato da lasciare una frazione di massa per il carico scientifico (\textit{payload}) inferiore all'1\% / 2\% della massa totale al momento del lancio \cite{johnson2012status}.
+Se si desidera raddoppiare il $\Delta v$ di una missione mantenendo costante il carico utile e il tipo di motore, non è sufficiente raddoppiare il propellente. Sarà necessario trasportare una quantità di propellente esponenzialmente maggiore, poiché il propulsore dovrà spendere energia per accelerare anche il propellente stesso che non è stato ancora espulso. Per le missioni interplanetarie dirette verso destinazioni distanti dal sistema solare, i requisiti di $\Delta v$ rendono il rapporto $\Lambda$ talmente elevato da lasciare una frazione di massa per il carico scientifico (\textit{payload}) inferiore all'1-2\% della massa totale al momento del lancio \cite{johnson2012status}.
 
 \begin{figure}[htbp!]
     \centering
@@ -71,11 +71,11 @@ Se si desidera raddoppiare il $\Delta v$ di una missione mantenendo costante il 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Il vincolo termodinamico insuperabile}
-Di fronte alla crescita esponenziale della massa, l'unica soluzione matematica per ridurre il carico di propellente è aumentare l'impulso specifico $I_{sp}$, o la velocità di scarico $v_e$. Tuttavia, nei motori chimici questo parametro non può essere aumentato arbitrariamente. 
+Di fronte alla crescita esponenziale della massa, l'unica soluzione matematica per ridurre il carico di propellente è aumentare l'impulso specifico $I_{sp}$ o la velocità di scarico $v_e$. Tuttavia, nei motori chimici questo parametro non può essere aumentato arbitrariamente. 
 
 La velocità di espulsione dei gas è strettamente vincolata dal calore massimo che la reazione chimica riesce a sprigionare e dalla leggerezza dei prodotti che generano la spinta. Pur ricorrendo alla miscela propulsiva più efficiente a disposizione dell'ingegneria aerospaziale (idrogeno e ossigeno allo stato liquido, LOX/LH2), il limite termodinamico teorico dell'impulso specifico si scontra con una soglia invalicabile di circa 450-460 secondi. Semplicemente, nessuna reazione chimica conosciuta possiede un'intensità energetica sufficiente per superare questa barriera naturale.
 
-Con dei limiti prestazionali così severi, l'esplorazione umana nello spazio profondo incontra una barriera fisica invalicabile \cite{mcconnell2023solarcruiser}. È in questo panorama di difficoltà termodinamiche che si inserisce la necessità di sviluppare propulsori di natura non-chimica. 
+Con limiti prestazionali così severi, l'esplorazione umana nello spazio profondo incontra una barriera fisica invalicabile \cite{mcconnell2023solarcruiser, montgomery2017roadmap}. È in questo panorama di difficoltà termodinamiche che si inserisce la necessità di sviluppare propulsori di natura non-chimica. 
 Se un veicolo potesse attingere la propria quantità di moto dall'esterno, eliminando del tutto la massa di propellente ($m_0 \approx m_f$), l'equazione di Tsiolkovsky decadrebbe, offrendo un impulso specifico potenzialmente infinito. Questa è l'esatta premessa teorica su cui si fonda la propulsione a vela solare.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -89,7 +89,7 @@ L'esplorazione sostenibile dello spazio profondo, quindi, richiede un cambio di 
 \subsection{Il dualismo onda-particella e la quantità di moto del fotone}
 Dal punto di vista della fisica classica, la luce è descritta dalle equazioni dell'elettromagnetismo formulate da James Clerk Maxwell nel 1873. Secondo questo modello, la radiazione solare è un'onda elettromagnetica che si propaga nello spazio e che, incidendo su una superficie, esercita una pressione derivante dalla forza di Lorentz applicata alle cariche elettriche del materiale investito.
 
-Sebbene il modello ondulatorio confermi l'esistenza della pressione di radiazione, la sua classificazione moderna si appoggia in modo più completo alla meccanica quantistica, in particolar modo riguardo alla propulsione. Nel 1905, Albert Einstein, spiegando l'effetto fotoelettrico, teorizzò che la luce non fosse unicamente un'onda continua, ma fosse quantizzata in pacchetti di energia, successivamente chiamati "fotoni".
+Sebbene il modello ondulatorio confermi l'esistenza della pressione di radiazione, la sua classificazione moderna, in particolar modo riguardo alle applicazioni propulsive, si appoggia in modo più completo alla meccanica quantistica. Nel 1905, Albert Einstein, spiegando l'effetto fotoelettrico, teorizzò che la luce non fosse unicamente un'onda continua, ma fosse quantizzata in pacchetti di energia, successivamente chiamati "fotoni".
 
 Questa scoperta diede origine al concetto di \textit{dualismo onda-particella}, successivamente formalizzato e analizzato da Louis de Broglie. Un fotone è una particella elementare priva di massa ($m_0 = 0$). Tuttavia, secondo l'equazione dell'energia relativistica di Einstein:
 
@@ -109,7 +109,7 @@ Ponendo la massa a riposo $m_0$ pari a zero, l'equazione si riduce a un'uguaglia
     E = p \cdot c \implies p = \frac{E}{c}
 \end{equation}
 
-Questa relazione quantistica elementare è il cuore della propulsione fotonica \cite{mcinnes1999solar}. Essa dimostra che ogni singolo fotone che colpisce la membrana di una vela solare trasporta una quantità di moto infinitesimale. Quando il fotone viene assorbito o riflesso dalla superficie, la sua quantità di moto subisce una variazione ($\Delta p$). Per il principio di conservazione della quantità di moto, questa variazione deve essere trasferita alla vela sotto forma di impulso meccanico, generando una forza continua nel tempo.
+Questa relazione quantistica elementare è il cuore della propulsione fotonica \cite{mcinnes1999solar}. Essa dimostra che ogni singolo fotone che colpisce la membrana di una vela solare trasporta una quantità di moto estremamente ridotta. Quando il fotone viene assorbito o riflesso dalla superficie, la sua quantità di moto subisce una variazione ($\Delta p$). Per il principio di conservazione della quantità di moto, questa variazione deve essere trasferita alla vela sotto forma di impulso meccanico, generando una forza continua nel tempo.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -130,7 +130,7 @@ Sfruttando la relazione di Einstein ricavata in precedenza (Equazione \ref{eq:qu
     P_E = \frac{W_E}{c} = \frac{1361}{299\,792\,458} \approx 4.56 \times 10^{-6} \, \text{N/m}^2
 \end{equation}
 
-Questo valore estremamente piccolo (pari a circa 4.56 micronewton per metro quadrato) evidenzia il primo problema della propulsione a vela solare: la forza generata da un singolo metro quadrato di membrana è infinitesimale. Per ottenere una spinta significativa, è necessario dispiegare vele di dimensioni enormi (centinaia o migliaia di metri quadrati) e operare in un ambiente privo di attriti aerodinamici, come lo spazio interplanetario \cite{rodrigues2023review}.
+Questo valore estremamente piccolo (pari a circa 4.56 micronewton per metro quadrato) evidenzia il primo problema della propulsione a vela solare: la forza generata da un singolo metro quadrato di membrana è estremamente debole. Per ottenere una spinta significativa, è necessario dispiegare vele di dimensioni enormi (centinaia o migliaia di metri quadrati) e operare in un ambiente privo di attriti aerodinamici, come lo spazio interplanetario \cite{rodrigues2023review, mcinnes1999solar}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -153,15 +153,15 @@ Definendo $r_E$ come la distanza di riferimento (1 AU) e $r$ come l'effettiva di
 \end{equation}
 
 Questa equazione impone un vincolo molto preciso, che grazie al simulatore software sarà possibile verificare in tempo reale: la spinta di una vela solare non è costante, ma decresce rapidamente man mano che il veicolo si allontana dal Sole.
-Avvicinandosi al Sole (ad esempio verso Venere o Mercurio, come avvenuto per la sonda IKAROS), il denominatore $r$ diminuisce, causando un incremento quadratico della spinta propulsiva e del carico termico. Al contrario, dirigendosi verso i pianeti esterni (Giove, Saturno), la pressione solare crolla drasticamente \cite{johnson2012status}. Ad esempio, a 5 AU (l'orbita di Giove), la spinta fotonica si riduce a solo 1/25 del valore misurato sulla Terra, rendendo le manovre a vela solare estremamente lente e complesse nello spazio profondo \cite{rodrigues2023review}.
+Avvicinandosi al Sole (ad esempio verso Venere o Mercurio, come avvenuto per la sonda IKAROS), il denominatore $r$ diminuisce, causando un incremento quadratico della spinta propulsiva e del carico termico \cite{montgomery2007mercury}. Al contrario, dirigendosi verso i pianeti esterni (Giove, Saturno), la pressione solare crolla drasticamente \cite{johnson2012status}. Ad esempio, a 5 AU (l'orbita di Giove), la spinta fotonica si riduce a solo 1/25 del valore misurato sulla Terra, rendendo le manovre a vela solare estremamente lente e complesse nello spazio profondo \cite{rodrigues2023review, mcinnes1999solar}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Luminosità solare}
 Sebbene l'utilizzo della Costante Solare ($P_E$) sia comune per le missioni riferite unicamente all'orbita terrestre, lo sviluppo di un simulatore astrodinamico complesso richiede un approccio più generalizzato. 
-Ecco perché un approccio più universale consiste nel calcolare la pressione di radiazione a partire dalla potenza totale emessa dal Sole, ovvero la sua luminosità ($L$), e adattare dinamicamente il calcolo in base alla posizione del veicolo.
+Per questo motivo, risulta più rigoroso calcolare la pressione di radiazione a partire dalla potenza totale emessa dal Sole, ovvero la sua luminosità ($L$), e adattare dinamicamente il calcolo in base alla posizione del veicolo.
 
-Difatti il Sole si comporta come un'enorme lampada sferica che irradia energia in tutte le direzioni. La potenza totale emessa dal Sole è una costante fisica, espressa in $W$ che può essere calcolata a partire dalla Costante Solare e dall'area della sfera di raggio 1 AU:
+Difatti il Sole si comporta come un'enorme lampada sferica che irradia energia in tutte le direzioni. La potenza totale emessa dal Sole è una costante fisica, espressa in $W$, che può essere calcolata a partire dalla Costante Solare e dall'area della sfera di raggio 1 AU:
 
 \begin{equation}
     L \approx 3.828 \times 10^{26} \, \text{W}
@@ -180,7 +180,7 @@ Poiché questa immensa energia si propaga nello spazio vuoto distribuendosi sull
     \label{fig:luminosity_inverse_square}
 \end{figure}
 
-Dividendo questo flusso per la velocità della luce $c$, si ottiene l'equazione universale della pressione fotonica locale con cui è possibile calcolare la forza istantanea che agisce su una vela solare in qualsiasi punto del sistema solare:
+Dividendo questo flusso per la velocità della luce $c$, si ottiene l'equazione universale della pressione fotonica locale con cui è possibile calcolare la forza istantanea che agisce su una vela solare in qualsiasi punto del sistema solare \cite{mcinnes1999solar}:
 
 \begin{equation} \label{eq:pressione_luminosita}
     P(r) = \frac{L}{4 \pi r^2 c}
@@ -192,14 +192,14 @@ Questa formulazione è più flessibile e adatta a un simulatore astrodinamico, p
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Modellazione ottica vettoriale e interazione fotonica}
-Avendo definito la pressione di radiazione solare locale $P(r)$, è possibile calcolare la forza totale che agisce su una vela solare. Tuttavia, questa forza non è semplicemente il prodotto scalare tra $P(r)$ e l'area geometrica della vela. La spinta risultante dipende da una complessa interazione tra i fotoni incidenti e la superficie della membrana, che coinvolge fenomeni di riflessione, assorbimento e diffusione.
+Una volta definita la pressione di radiazione solare locale $P(r)$, è possibile calcolare la forza totale che agisce su una vela solare. Tuttavia, questa forza non è semplicemente il prodotto scalare tra $P(r)$ e l'area geometrica della vela. La spinta risultante dipende da una complessa interazione tra i fotoni incidenti e la superficie della membrana, che coinvolge fenomeni di riflessione, assorbimento e diffusione.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Area effettiva e angolo di incidenza}
 Il primo parametro fondamentale per calcolare l'interazione fotonica è la determinazione della parte della vela effettivamente esposta al flusso di fotoni. La forza generata dalla pressione solare non dipende dall'area totale della vela, ma dall'area proiettata perpendicolarmente alla direzione dei raggi solari.
 
-Per prima cosa è necessario definire un sistema di riferimento solidale alla vela solare in cui $\mathbf{n}$ rappresenta il versore normale (perpendicolare) alla superficie della vela. Inoltre, è utile dichiarare $\mathbf{u}$ come il versore direzione dell'illuminazione, ovvero il vettore che punta dal centro di massa del veicolo verso il Sole. 
+Per prima cosa è necessario definire un sistema di riferimento solidale alla vela solare in cui $\mathbf{n}$ rappresenta il versore normale (perpendicolare) alla superficie della vela. Inoltre, è utile dichiarare $\mathbf{u}$ come il versore direzionale dell'illuminazione, ovvero il vettore che punta dal centro di massa del veicolo verso il Sole. 
 
 L'angolo compreso tra il versore normale $\mathbf{n}$ e la direzione dei raggi solari $\mathbf{u}$ prende il nome di \textit{angolo di incidenza} ($\alpha$). 
 La superficie della vela non sempre è completamente esposta al flusso solare. L'area effettiva che riceve i fotoni dipende dall'orientamento della vela rispetto al Sole ed è calcolata così:
@@ -215,12 +215,12 @@ La superficie della vela non sempre è completamente esposta al flusso solare. L
     \label{fig:sail_geometry}
 \end{figure}
 
-Questa relazione geometrica implica che la vela cattura il massimo della quantità di moto quando è orientata frontalmente al Sole ($\alpha = 0^\circ$, dove $\cos(0) = 1$). Man mano che la vela viene inclinata, l'area esposta diminuisce, fino ad annullarsi completamente quando la vela è posta "di taglio" rispetto ai raggi solari ($\alpha = 90^\circ$, dove $\cos(90) = 0$).
+Questa relazione geometrica implica che la vela cattura il massimo della quantità di moto quando è orientata frontalmente al Sole ($\alpha = 0^\circ$, dove $\cos(0^\circ) = 1$). Man mano che la vela viene inclinata, l'area esposta diminuisce, fino ad annullarsi completamente quando la vela è posta "di taglio" rispetto ai raggi solari ($\alpha = 90^\circ$, dove $\cos(90^\circ) = 0$).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Fenomeni di ombreggiamento e auto-occlusione}
-Il modello matematico finora descritto assume che la vela solare sia una superficie piana e perfettamente esposta ai raggi solari. Nella realtà operativa, tuttavia, la sonda è una struttura tridimensionale complessa. Elementi come il modulo centrale (\textit{bus}), i bracci telescopici per il dispiegamento (\textit{booms}) e la strumentazione di bordo sono posti tra il Sole e la vela riflettente, proiettando delle ombre.
+Il modello matematico finora descritto ipotizza che la vela solare sia una superficie piana e perfettamente esposta ai raggi solari. Nella realtà operativa, tuttavia, la sonda è una struttura tridimensionale complessa. Elementi come il modulo centrale (\textit{bus}), i bracci telescopici per il dispiegamento (\textit{booms}) e la strumentazione di bordo sono posti tra il Sole e la vela riflettente, proiettando delle ombre.
 
 Questo fenomeno, noto come \textbf{auto-occlusione}, azzera la spinta fotonica nelle zone oscurate. Le conseguenze sulla dinamica del veicolo sono due: 
 \begin{itemize}
@@ -245,7 +245,7 @@ Il calcolo deve essere impostato come un integrale di superficie che includa una
 \end{figure}
 
 Purtroppo questo calcolo risulta essere impossibile da risolvere analiticamente, poiché la funzione di visibilità $v(x,y)$ dipende dalla geometria complessa del veicolo e dalla posizione relativa del Sole.
-Questo ostacolo giustifica la necessità di utilizzare un motore grafico: algoritmi di calcolo spaziale discretizzato, come il \textit{Ray Casting}, permettono di campionare dinamicamente la funzione di visibilità $v(x,y)$ sulla geometria della vela, risolvendo il problema delle ombre in tempo reale.
+Questo ostacolo giustifica la necessità di utilizzare un motore grafico: algoritmi di calcolo spaziale discretizzato, come il \textit{Ray Casting} \cite{ericson2004real}, permettono di campionare dinamicamente la funzione di visibilità $v(x,y)$ sulla geometria della vela, risolvendo il problema delle ombre in tempo reale.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -254,7 +254,7 @@ Oltre all'auto-occlusione causata dai componenti specifici della vela solare, un
 
 Se un'eclissi totale comporta semplicemente l'azzeramento globale della spinta fotonica, le fasi di transizione o di occlusione parziale introducono problemi molto più complessi. Quando un corpo oscura solo una porzione della vela solare, si instaura una forte asimmetria nella distribuzione delle forze. 
 
-Dal punto di vista della meccanica dei corpi rigidi, la differenza di pressione causata dalla radiazione solare, tra la zona in ombra e la superficie illuminata, dà luogo ad una discordanza tra i due centri di pressione fotonica e di massa del veicolo, generando un momento torcente che provoca la rotazione del veicolo.
+Dal punto di vista della meccanica dei corpi rigidi, la differenza di pressione causata dalla radiazione solare, tra la zona in ombra e la superficie illuminata, dà luogo ad un disallineamento tra il centro di pressione fotonica e il centro di massa del veicolo, generando un momento torcente che ne provoca la rotazione.
 
 Il simulatore sviluppato in questo elaborato è capace di analizzare questa complessa casistica.
 In particolar modo, grazie alla modellazione tridimensionale della vela solare e alla simulazione dinamica del sistema solare, è possibile calcolare in tempo reale l'effetto di un'eclissi parziale, prevedendo con precisione la forza risultante e il momento torcente che agisce sul veicolo durante le fasi di transizione.
@@ -267,7 +267,7 @@ In particolar modo, grazie alla modellazione tridimensionale della vela solare e
     \label{fig:eclipse_torque}
 \end{figure}
 
-L'effetto di questo momento torcente è di fondamentale importanza per la dinamica del veicolo, poiché può indurre un "rotolamento" incontrollato che a sua volta può compromettere l'orientamento dei pannelli solari e interrompere i collegamenti telemetrici con la Terra. Inoltre costringe il sistema di controllo d'assetto a consumare preziose risorse propulsive per contrastare queste rotazioni, riducendo ulteriormente l'efficienza complessiva della missione \cite{rodrigues2023review}.
+L'effetto di questo momento torcente è di fondamentale importanza per la dinamica del veicolo, poiché può indurre un "rotolamento" incontrollato che a sua volta può compromettere l'orientamento dei pannelli solari e interrompere i collegamenti telemetrici con la Terra. Tale rotazione, inoltre, costringe il sistema di controllo d'assetto a consumare preziose risorse propulsive per contrastare queste rotazioni, riducendo ulteriormente l'efficienza complessiva della missione \cite{rodrigues2023review, spencer2023lightsail2}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -283,7 +283,7 @@ Integrando questo scambio di quantità di moto sull'intera area esposta $A \cos(
     \mathbf{F}_{\text{ideale}} = 2 P(r) A \cos^2(\alpha) \mathbf{n}
 \end{equation}
 Per comprendere l'origine del termine $\cos^2(\alpha)$, è necessario analizzare in dettaglio l'interazione fotonica per ogni singolo fotone incidente.
-Considerando un fotone incidente che trasporta quantità di moto $p = E/c$. 
+Si consideri un fotone incidente che trasporta quantità di moto $p = E/c$. 
 
 Quando il fotone colpisce la superficie della vela con angolo di incidenza $\alpha$ (misurato rispetto alla normale $\mathbf{n}$), la sua quantità di moto può essere ripartita in due componenti perpendicolari tra loro:
 \begin{itemize}
@@ -324,7 +324,7 @@ Questa dipendenza quadratica dimostra che la spinta di una vela solare diminuisc
 \subsection{Il modello ottico realistico (Superfici non ideali)}
 Il modello ideale descritto dall'Equazione \ref{eq:srp_ideale} è un'ottima approssimazione per i calcoli preliminari, ma risulta inadeguato per un simulatore informatico \textit{High-Fidelity}. Nella realtà, nessun materiale polimerico metallizzato (come il Kapton alluminato) possiede una riflettività del 100\%. 
 
-L'interazione della luce con un materiale reale è un fenomeno complesso in cui i fotoni incidenti subiscono rimbalzi differenti. Per modellare matematicamente questo comportamento, la letteratura aerospaziale definisce tre coefficienti ottici, la cui somma conserva l'energia totale (deve essere pari a 1):
+L'interazione della luce con un materiale reale è un fenomeno complesso in cui i fotoni incidenti subiscono rimbalzi differenti. Per modellare matematicamente questo comportamento, la letteratura aerospaziale definisce tre coefficienti ottici, la cui somma conserva l'energia totale (deve essere pari a 1) \cite{mcinnes1999solar}:
 
 \begin{equation}
     \rho_s + \rho_d + \alpha_a = 1
@@ -332,8 +332,8 @@ L'interazione della luce con un materiale reale è un fenomeno complesso in cui 
 
 Questi parametri descrivono le tre reazioni ottiche della superficie:
 \begin{itemize}
-    \item \textbf{Riflessione speculare ($\rho_s$):} La parte di fotoni che rimbalza elasticamente mantenendo l'angolo di incidenza. Genera una forza diretta unicamente lungo la normale $\mathbf{n}$.
-    \item \textbf{Riflessione diffusa ($\rho_d$):} La parte di fotoni che, a causa delle irregolarità del materiale, viene riflessa in direzioni casuali. Questa componente introduce una forza di taglio parallela alla superficie della vela, deviando la forza totale rispetto alla normale $\mathbf{n}$.
+    \item \textbf{Riflessione speculare ($\rho_s$):} La frazione di fotoni che rimbalza elasticamente mantenendo l'angolo di incidenza. Genera una forza diretta unicamente lungo la normale $\mathbf{n}$.
+    \item \textbf{Riflessione diffusa ($\rho_d$):} La frazione di fotoni che, a causa delle irregolarità del materiale, viene riflessa in direzioni casuali. Questa componente introduce una forza di taglio parallela alla superficie della vela, deviando la forza totale rispetto alla normale $\mathbf{n}$.
     \item \textbf{Assorbimento ($\alpha_a$):} La frazione di fotoni che non viene riflessa, ma assorbita dal materiale. Questa componente non genera "rimbalzo", trasferendo la propria quantità di moto esclusivamente nella direzione di incidenza originale dei raggi solari ($\mathbf{u}$). L'energia assorbita si trasforma poi in calore termico.
 \end{itemize}
 
@@ -349,9 +349,9 @@ La coesistenza di questi tre fenomeni fa sì che la forza risultante su una vela
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{L'equazione vettoriale dell'accelerazione SRP}
-Volendo quindi determinare l'effettiva spinta generata sul veicolo, i valori derivanti dai diversi fenomeni ottici descritti devono essere raggruppati in un'unica formula. Per la buona riuscita di questa operazione, si introduce il versore trasversale $\mathbf{t}$, definito come parallelo al piano della vela solare e complanare al piano formato dalla normale $\mathbf{n}$ e dalla direzione di incidenza dei raggi solari $\mathbf{u}$.
+Volendo quindi determinare l'effettiva spinta generata sul veicolo, i valori derivanti dai diversi fenomeni ottici descritti devono essere raggruppati in un'unica formula. A tal fine, si introduce il versore trasversale $\mathbf{t}$, definito come parallelo al piano della vela solare e complanare al piano formato dalla normale $\mathbf{n}$ e dalla direzione di incidenza dei raggi solari $\mathbf{u}$.
 
-L'accelerazione totale generata dalla Pressione di Radiazione Solare ($\mathbf{a}_{\text{SRP}}$) su un veicolo di massa $m$ e area $A$, inclinato di un angolo $\alpha$ lungo la direzione del versore $\mathbf{t}$, è espressa dalla seguente equazione vettoriale \cite{simo2016realistic}:
+L'accelerazione totale generata dalla Pressione di Radiazione Solare ($\mathbf{a}_{\text{SRP}}$) su un veicolo di massa $m$ e area $A$, inclinato di un angolo $\alpha$ lungo la direzione del versore $\mathbf{t}$, è espressa dalla seguente equazione vettoriale \cite{mcinnes1999solar, simo2016realistic}:
 
 \begin{equation} \label{eq:srp_force_vector}
     \mathbf{a}_{\text{SRP}} = \frac{P(r) A}{m} \cos(\alpha) \left[ \left(1 + \rho_s \cos(2\alpha) + \frac{2}{3}\rho_d \cos(\alpha) \right)\mathbf{n} + \left(\rho_s \sin(2\alpha) + \rho_d \sin(\alpha) \right)\mathbf{t} \right]
@@ -363,14 +363,14 @@ Questa formulazione mostra l'intera fisica propulsiva del modello non-ideale. Al
     \item La componente associata al versore $\mathbf{t}$ rappresenta la \textbf{forza di taglio} (\textit{shear force}), elemento critico per la navigazione solare poiché in grado di generare spostamenti laterali della traiettoria orbitale.
 \end{itemize}
 
-Calcolare questa espressione vettoriale istante per istante, ricavando ogni volta le normali geometriche $\mathbf{n}$ e osservando come i raggi incidono sulla vela, rappresenta la prima sfida che il simulatore software in C++, sviluppata in Unreal Engine e presentata nel capitolo successivo, deve svolgere.
+Calcolare questa espressione vettoriale istante per istante, ricavando ogni volta le normali geometriche $\mathbf{n}$ e osservando come i raggi incidono sulla vela, rappresenta la prima sfida che il simulatore software in C++, sviluppato in Unreal Engine e presentato nel capitolo successivo, deve affrontare.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Parametri di design e sintesi della dinamica orbitale}
 Attraverso le equazioni esposte nei paragrafi precedenti, è possibile calcolare con precisione la forza di pressione solare che agisce su una vela in qualsiasi punto del sistema solare, tenendo conto dell'orientamento della vela e delle proprietà ottiche del materiale.
-Tuttavia, il reale comportamento cinematico del veicolo spaziale sottoposto alla perturbazione solare non dipende esclusivamente dall'efficienza ottica del materiale o dalla distanza dal Sole, ma è rigidamente vincolata dalla geometria strutturale e dalla distribuzione delle masse del veicolo. Ecco perché diventa utile definire alcuni parametri di design che sintetizzano le caratteristiche macroscopiche del veicolo e che permettono di valutare le prestazioni propulsive in modo più immediato, indipendentemente dall'orbita specifica o dalle condizioni operative.
+Tuttavia, il reale comportamento cinematico del veicolo spaziale sottoposto alla perturbazione solare non dipende esclusivamente dall'efficienza ottica del materiale o dalla distanza dal Sole, ma è rigidamente vincolato dalla geometria strutturale e dalla distribuzione delle masse del veicolo. Ecco perché diventa utile definire alcuni parametri di design che sintetizzano le caratteristiche macroscopiche del veicolo e che permettono di valutare le prestazioni propulsive in modo più immediato, indipendentemente dall'orbita specifica o dalle condizioni operative.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -384,14 +384,14 @@ Il parametro di design più critico nella progettazione di un veicolo a propulsi
 La massa $m$ al numeratore comprende tutti i componenti del veicolo: la massa del carico utile (\textit{payload} scientifico), la massa riguardante i sistemi satellitari (sistemi di comunicazione, computer di bordo, pannelli solari, giroscopi per la rotazione della vela), la massa dei bracci telescopici di dispiegamento (\textit{booms}) e, infine, la massa della membrana stessa.
 
 L'obiettivo primario durante il dimensionamento di una missione è minimizzare $\sigma$. Un valore di \textit{Sail Loading} basso indica infatti che il veicolo è molto leggero rispetto alla superficie che espone alla radiazione solare, massimizzando così l'accelerazione generata dalla pressione di radiazione.
-Le vele solari di prima generazione (come IKAROS) presentavano valori di $\sigma$ relativamente alti a causa dell'utilizzo di membrane più spesse e meccanismi di dispiegamento delle stesse più pesanti. Attraverso gli sviluppi moderni e futuri si può mirare a spingere questo valore al di sotto dei $10 \, \text{g/m}^2$, impiegando pellicole di spessore sub-micrometrico e strutture in fibra di carbonio, che sono in grado di resistere alle sollecitazioni meccaniche e termiche dello spazio profondo pur mantenendo una massa estremamente ridotta \cite{rodrigues2023review} \cite{johnson2012status}.
+Le vele solari di prima generazione (come IKAROS) presentavano valori di $\sigma$ relativamente alti a causa dell'utilizzo di membrane più spesse e meccanismi di dispiegamento delle stesse più pesanti. Attraverso gli sviluppi moderni e futuri si può mirare a spingere questo valore al di sotto dei $10 \, \text{g/m}^2$, impiegando pellicole di spessore sub-micrometrico e strutture in fibra di carbonio, che sono in grado di resistere alle sollecitazioni meccaniche e termiche dello spazio profondo pur mantenendo una massa estremamente ridotta \cite{rodrigues2023review, johnson2012status, johnson2009future}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Accelerazione Caratteristica}
 Un altro parametro di design fondamentale è l'Accelerazione Caratteristica ($a_c$). Esso rappresenta il valore massimo di accelerazione che una vela solare può generare quando è esposta alla luce solare nelle condizioni più favorevoli: posizionata a 1 Unità Astronomica dal Sole e orientata perpendicolarmente rispetto ai raggi solari ($\alpha = 0^\circ$).
 
-Sostituendo l'equazione del \textit{Sail Loading} ($\sigma$) all'interno del modello ottico realistico discusso in precedenza (Equazione \ref{eq:srp_force_vector}), e considerando che per $\alpha = 0^\circ$ la componente trasversale si annulla, si ricava la formula analitica dell'Accelerazione Caratteristica:
+Sostituendo l'equazione del \textit{Sail Loading} ($\sigma$) all'interno del modello ottico realistico discusso in precedenza (Equazione \ref{eq:srp_force_vector}), e considerando che per $\alpha = 0^\circ$ la componente trasversale si annulla, si ricava la formula analitica dell'Accelerazione Caratteristica \cite{mcinnes1999solar}:
 
 \begin{equation} \label{eq:accelerazione_caratteristica}
     a_c = \frac{P_E}{\sigma} \left( 1 + \rho_s + \frac{2}{3}\rho_d \right) \quad \left[ \frac{\text{m}}{\text{s}^2} \right]
@@ -408,12 +408,12 @@ Un ulteriore parametro di design di grande interesse astrodinamico è il Numero 
     \beta = \frac{a_c}{g_{\text{sole}}}
 \end{equation}
 
-Il Numero di Leggerezza è un valore che mostra rapidamente la capacità propulsiva di una vela solare rispetto alla forza gravitazionale che agisce su di essa. Un valore di $\beta < 1$ indica che la forza gravitazionale del Sole vince su quella fotonica, di conseguenza la vela non potrà mai "sfuggire" dal sistema solare e per acquisire velocità dovrà rimanere in orbita per molto. Al contrario, un valore di $\beta > 1$ indica che la spinta fotonica supera la gravità solare, permettendo al veicolo di "sfuggire" direttamente dal sistema solare seguendo una traiettoria iperbolica, senza necessità di lunghi periodi di accelerazione orbitale \cite{mcinnes1999solar}.
+Il Numero di Leggerezza è un valore che mostra rapidamente la capacità propulsiva di una vela solare rispetto alla forza gravitazionale che agisce su di essa. Un valore di $\beta < 1$ indica che la forza gravitazionale del Sole vince su quella fotonica, di conseguenza la vela non potrà mai "sfuggire" dal sistema solare e per acquisire velocità dovrà rimanere in orbita per periodi prolungati. Al contrario, un valore di $\beta > 1$ indica che la spinta fotonica supera la gravità solare, permettendo al veicolo di "sfuggire" direttamente dal sistema solare seguendo una traiettoria iperbolica, senza necessità di lunghi periodi di accelerazione orbitale \cite{mcinnes1999solar}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Il campo gravitazionale primario e la meccanica orbitale}
-Seppur fino ad ora si sia parlato esclusivamente delle forze riguardanti la dinamica fotonica, è importante evidenziare che la vela solare è comunque sempre soggetta alla forza gravitazionale di uno o più corpi celesti.
+Sebbene fino ad ora si sia discusso esclusivamente delle forze riguardanti la dinamica fotonica, è importante evidenziare che la vela solare è comunque sempre soggetta alla forza gravitazionale di uno o più corpi celesti.
 
 Il veicolo fotonico è infatti governato dalle leggi della meccanica orbitale, ed in particolar modo dalla legge di gravitazione universale formulata da Isaac Newton.
 Questa afferma che ogni corpo dotato di massa esercita un'attrazione gravitazionale su ogni altro corpo, con una forza $\mathbf{F}_g$ che è direttamente proporzionale al prodotto delle loro masse e inversamente proporzionale al quadrato della distanza che unisce i due centri di massa:
@@ -424,7 +424,7 @@ Questa afferma che ogni corpo dotato di massa esercita un'attrazione gravitazion
 
 dove:
 \begin{itemize}
-    \item $G$ è la Costante di Gravitazione Universale ($6.674 \times 10^{-11} \, \text{m}^3 \text{kg}^{-1} \text{s}^{-2}$), fondamentale che quantifica l'intensità gravitazionale;
+    \item $G$ è la Costante di Gravitazione Universale ($6.674 \times 10^{-11} \, \text{m}^3 \text{kg}^{-1} \text{s}^{-2}$), grandezza fondamentale che quantifica l'intensità gravitazionale;
     \item $M$ è la massa del corpo centrale, espressa in $\text{kg}$, che genera il campo gravitazionale;
     \item $m$ è la massa del veicolo spaziale, che subisce l'attrazione gravitazionale generata dal corpo centrale;
     \item $r$ è la distanza tra i centri di massa del corpo centrale e del veicolo spaziale, misurata in metri;
@@ -441,7 +441,7 @@ Tale velocità si ricava uguagliando la forza gravitazionale alla forza centrifu
     v = \sqrt{\frac{G \cdot M}{r}}
 \end{equation}
 
-La moltiplicazione tra $G$ e $M$ è un prodotto così ricorrente nella meccanica orbitale che viene spesso accorpato in un unico parametro, noto come \textit{parametro gravitazionale standard} ($\mu$) definito come:
+Il prodotto tra $G$ e $M$ ricorre così frequentemente nella meccanica orbitale da essere spesso accorpato in un unico parametro, noto come \textit{parametro gravitazionale standard} ($\mu$) definito come:
 
 \begin{equation}
     \mu = G \cdot M
@@ -453,8 +453,8 @@ La moltiplicazione tra $G$ e $M$ è un prodotto così ricorrente nella meccanica
     \mathbf{a}_g = \frac{\mathbf{F}_g}{m} = - G \frac{M}{r^2} \mathbf{\hat{r}} = - \frac{\mu}{r^2} \mathbf{\hat{r}}
 \end{equation}
  
-Inoltre, tenendo conto che il versore $\mathbf{\hat{r}}$ è definito come $\mathbf{r}/r$, dove $\mathbf{r}$ è il vettore posizione del veicolo spaziale rispetto al corpo centrale è possibile esprimere tale accelerazione in forma vettoriale.
-Infine quindi, l'equazione vettoriale dell'accelerazione gravitazionale centrale che agisce su un veicolo spaziale in orbita attorno a un corpo centrale è:
+Inoltre, tenendo conto che il versore $\mathbf{\hat{r}}$ è definito come $\mathbf{r}/r$, dove $\mathbf{r}$ è il vettore posizione del veicolo spaziale rispetto al corpo centrale, è possibile esprimere tale accelerazione in forma vettoriale.
+In definitiva, l'equazione vettoriale dell'accelerazione gravitazionale centrale che agisce su un veicolo spaziale in orbita attorno a un corpo centrale è \cite{curtis2005orbital}:
 
 \begin{equation}
     \mathbf{a}_g(\mathbf{r}) = - \frac{\mu}{r^3} \mathbf{r}
@@ -472,7 +472,7 @@ Infine quindi, l'equazione vettoriale dell'accelerazione gravitazionale centrale
 \subsection{Sintesi finale: l'Equazione del Moto}
 Ora che sono state definite sia gravità ($\mathbf{a}_g$) che spinta fotonica ($\mathbf{a}_{\text{SRP}}$), è possibile unirle per ottenere l'equazione finale che descrive il movimento della vela solare.
 
-Per mantenere il calcolo gestibile, si ricorre solitamente a un'approssimazione pratica: vengono ignorate le forze secondarie marginali, come l'attrito dell'alta atmosfera, l'attrazione della Luna o la forma non perfettamente sferica della Terra. Fatto ciò, l'accelerazione totale della navicella è semplicemente la somma di chi la tira verso il basso (il pianeta) e di chi la spinge via (il Sole):
+Per mantenere il calcolo gestibile, si ricorre solitamente a un'approssimazione pratica: vengono ignorate le forze secondarie marginali, come l'attrito dell'alta atmosfera, l'attrazione della Luna o la forma non perfettamente sferica della Terra. Sotto tale ipotesi, l'accelerazione totale del veicolo spaziale risulta dalla somma vettoriale dell'attrazione gravitazionale del pianeta centrale e della forza repulsiva della pressione solare \cite{mcinnes1999solar, simo2016realistic}:
 
 \begin{equation} \label{eq:equazione_moto_finale}
     \ddot{\mathbf{r}} = \mathbf{a}_g(\mathbf{r}) + \mathbf{a}_{\text{SRP}}(\mathbf{r}, \alpha, \rho_s, \rho_d)

@@ -3,13 +3,13 @@
 
 Lo sviluppo di una complessa architettura software, come quella descritta nei capitoli precedenti, ha come fine ultimo la generazione di dati fisicamente accurati e scientificamente validi. Un simulatore aerospaziale, per essere considerato affidabile, non deve limitarsi a renderizzare graficamente il comportamento di un veicolo, ma deve produrre risultati che rispecchino i modelli analitici della meccanica orbitale e dell'ottica geometrica.
 
-In questo capitolo vengono presentati i risultati ottenuti dall'esecuzione del simulatore in diversi casi di test, progettati per validare specifici aspetti del comportamento dinamico della vela solare. Sfruttando infatti l'esportazione CSV e lo script Python per l'analisi visiva illustrati nel Capitolo \ref{chap:telemetria}, sono state condotte tre distinte tipologie di test per validare il corretto funzionamento del motore fisico-matematico. 
+In questo capitolo vengono presentati i risultati ottenuti dall'esecuzione del simulatore in diversi casi di test, progettati per validare specifici aspetti del comportamento dinamico della vela solare. Sfruttando l'esportazione CSV e lo script Python per l'analisi visiva illustrati nel Capitolo \ref{chap:telemetria}, sono state condotte tre distinte tipologie di test per validare il corretto funzionamento del motore fisico-matematico \cite{mcinnes1999solar, simo2016realistic}. 
 
 L'analisi si è concentrata in particolare su tre aspetti fondamentali:
 \begin{enumerate}
     \item \textbf{Validazione Propulsiva:} L'analisi del progressivo innalzamento orbitale causato dalla spinta continua dei fotoni solari.
     \item \textbf{Validazione Ottica:} La verifica della corretta implementazione della Legge di Lambert, che regola la dipendenza della forza solare dall'angolo di incidenza dei raggi luminosi.
-    \item \textbf{Validazione delle Eclissi:} La conferma dell'azzeramento istantaneo della forza propulsiva durante i periodi di eclissi, quando la sonda si trova all'interno del cono d'ombra terrestre.
+    \item \textbf{Validazione delle Eclissi:} La conferma dell'azzeramento istantaneo della forza propulsiva durante i periodi di eclissi, ovvero quando la sonda si trova all'interno del cono d'ombra terrestre.
 \end{enumerate}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -17,9 +17,9 @@ L'analisi si è concentrata in particolare su tre aspetti fondamentali:
 
 \section{Validazione Propulsiva (Espansione Orbitale)}
 
-La prima tipologia di test è stata progettata per validare l'efficacia propulsiva della vela solare, osservando l'evoluzione dinamica dell'orbita nel tempo. In assenza di forze esterne, un oggetto in orbita attorno a un pianeta seguirebbe una traiettoria perfettamente circolare o ellittica, mantenendo costante la distanza dal centro del pianeta. Tuttavia, l'introduzione della pressione di radiazione solare agisce come una perturbazione che attribuisce energia nel sistema, modificando progressivamente la forma e le dimensioni dell'orbita originariamente kepleriana.
+La prima tipologia di test è stata progettata per validare l'efficacia propulsiva della vela solare, osservando l'evoluzione dinamica dell'orbita nel tempo. In assenza di forze esterne, un oggetto in orbita attorno a un pianeta seguirebbe una traiettoria perfettamente circolare o ellittica, mantenendo costante la distanza dal centro del pianeta. Tuttavia, l'introduzione della pressione di radiazione solare agisce come una perturbazione che trasferisce energia al sistema, modificando progressivamente la forma e le dimensioni dell'orbita originariamente kepleriana \cite{curtis2005orbital, mcinnes1999solar}.
 
-Per verificare questo comportamento, il simulatore è stato inizializzato posizionando una vela solare realistica (Massa: 90 Kg, Area: 100 $m^2$) in un'orbita circolare bassa (LEO). La simulazione è stata eseguita applicando un moltiplicatore alla sola luminosità solare, al fine di comprimere l'effetto di mesi di navigazione in pochi minuti di esecuzione reale.
+Per verificare questo comportamento, il simulatore è stato inizializzato posizionando una vela solare realistica (Massa: 90 kg, Area: 100 $m^2$) in un'orbita circolare bassa (LEO). La simulazione è stata eseguita applicando un moltiplicatore alla sola luminosità solare, al fine di comprimere l'effetto di mesi di navigazione in pochi minuti di esecuzione reale.
 
 \begin{figure}[htbp!]
     \centering
@@ -32,7 +32,7 @@ Osservando i dati telemetrici (Figura \ref{fig:plot_espansione}), si evince la m
 
 L'aspetto più rilevante si verifica tuttavia nella fase finale del grafico: l'azione continua e prolungata della pressione solare genera un effetto cumulativo sull'orbita. L'accumulo di energia meccanica spinge velocemente l'apogeo fino alla soglia dei $10.000$ km, allargando drasticamente l'orbita. 
 
-Parallelamente, il grafico inferiore della velocità conferma il rispetto del principio di conservazione dell'energia e delle leggi di Keplero. Quando la sonda si avvicina al perigeo subisce una forte accelerazione gravitazionale (sfiorando i $10$ km/s), mentre durante la risalita verso i $10.000$ km di distanza l'energia cinetica viene convertita in potenziale, facendo crollare la velocità orbitale a poco più di $5$ km/s.
+Parallelamente, il grafico inferiore della velocità conferma il rispetto del principio di conservazione dell'energia e delle leggi di Keplero. Quando la sonda si avvicina al perigeo, subisce una forte accelerazione gravitazionale (sfiorando i $10$ km/s), mentre durante la risalita verso i $10.000$ km di distanza l'energia cinetica viene convertita in potenziale, facendo crollare la velocità orbitale a poco più di $5$ km/s \cite{curtis2005orbital}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -41,7 +41,7 @@ Parallelamente, il grafico inferiore della velocità conferma il rispetto del pr
 
 La seconda tipologia di test mira a validare la corretta implementazione dell'ottica geometrica all'interno del motore di simulazione. Secondo la Legge del Coseno di Lambert, l'intensità della radiazione (e di conseguenza la forza propulsiva generata) non è costante, ma è direttamente proporzionale al coseno dell'angolo di incidenza tra il raggio luminoso e la normale della superficie illuminata.
 
-Più semplicemente, una vela solare riceverà la massima spinta quando è orientata perpendicolarmente alla sorgente luminosa (angolo di incidenza pari a $0^\circ$), mentre la forza decadrà fino ad azzerarsi completamente quando la vela risulta parallela ai raggi (angolo di incidenza pari a $90^\circ$, chiamato assetto "di taglio").
+Più semplicemente, una vela solare riceverà la massima spinta quando è orientata perpendicolarmente alla sorgente luminosa (angolo di incidenza pari a $0^\circ$), mentre la forza decadrà fino ad azzerarsi completamente quando la vela risulta parallela ai raggi (angolo di incidenza pari a $90^\circ$, chiamato assetto "di taglio") \cite{mcinnes1999solar}.
 
 Per validare questo comportamento, la telemetria è stata configurata per isolare esclusivamente il modulo della forza solare (\lstinline|SolarForceModule|) e l'angolo di inclinazione vettoriale (\lstinline|IncidenceAngle|), monitorandone l'evoluzione durante le costanti rotazioni orbitali.
 
@@ -61,7 +61,7 @@ Questo risultato certifica che l'algoritmo di \textit{Ray Casting} progettato va
 
 \section{Validazione delle Eclissi (Zone d'Ombra Terrestre)}
 
-La terza e ultima tipologia di test riguarda la validazione del comportamento della vela durante i periodi di eclissi. In una orbita bassa (LEO), la vela trascorre circa il 40\% del suo periodo orbitale all'interno del cono d'ombra generato dal pianeta Terra. Durante questa fase, l'assenza di radiazione solare diretta deve tradursi in un azzeramento istantaneo della forza propulsiva.
+La terza e ultima tipologia di test riguarda la validazione del comportamento della vela durante i periodi di eclissi. In un'orbita bassa (LEO), la vela trascorre circa il 40\% del suo periodo orbitale all'interno del cono d'ombra generato dal pianeta Terra. Durante questa fase, l'assenza di radiazione solare diretta deve tradursi in un azzeramento istantaneo della forza propulsiva \cite{curtis2005orbital}.
 
 Mentre il motore di \textit{Ray Casting} di Unreal Engine gestisce la risoluzione vettoriale della luce e l'ottica geometrica locale, l'analisi delle eclissi planetarie offre l'opportunità di affiancare alla simulazione un rigoroso modello di verifica matematica.
 
@@ -74,7 +74,7 @@ Per garantire la massima affidabilità scientifica dell'esperimento, si è adott
     \label{fig:plot_eclipse}
 \end{figure}
 
-Il grafico risultante (Figura \ref{fig:plot_eclipse}) illustra il comportamento della vela in modo inequivocabile. La linea blu (Forza Solare) mostra un'alternanza netta e improvvisa (chiamata "andamento a onda quadra"): durante la fase di esposizione alla luce l'efficienza propulsiva risulta massima, per poi collassare istantaneamente a zero nel momento esatto in cui il veicolo spaziale entra nel cono d'ombra terrestre. La durata di ciascun periodo di eclissi è perfettamente allineata con le previsioni teoriche, confermando la precisione del motore di simulazione nel gestire le dinamiche orbitali e le interruzioni propulsive.
+Il grafico risultante (Figura \ref{fig:plot_eclipse}) illustra il comportamento della vela in modo inequivocabile. La linea blu (Forza Solare) mostra un'alternanza netta e improvvisa (il cosiddetto andamento a "onda quadra"): durante la fase di esposizione alla luce l'efficienza propulsiva risulta massima, per poi collassare istantaneamente a zero nel momento esatto in cui il veicolo spaziale entra nel cono d'ombra terrestre. La durata di ciascun periodo di eclissi è perfettamente allineata con le previsioni teoriche, confermando la precisione del motore di simulazione nel gestire le dinamiche orbitali e le interruzioni propulsive.
 
 Questo comportamento certifica che l'architettura software progettata è in grado di simulare fedelmente non solo le meccaniche orbitali continue, ma anche le brusche interruzioni del vettore di spinta, elemento dinamico fondamentale per la futura pianificazione di vere missioni spaziali basate su propulsione a vela solare.
 
