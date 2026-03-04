@@ -14,7 +14,7 @@ Per comprendere la necessità ingegneristica di sviluppare tecnologie a vela sol
 \subsection{Conservazione della quantità di moto ed equazione del razzo}
 Il principio di funzionamento di un qualsiasi propulsore chimico si basa sulla terza legge della dinamica di Newton e sul principio di conservazione della quantità di moto. In un sistema chiuso, in assenza di forze esterne, la variazione totale della quantità di moto deve essere nulla.
 
-Considerando un veicolo spaziale che espelle massa (propellente) a una velocità di scarico $v_e$, la quantità di moto totale del sistema (veicolo + propellente) deve rimanere costante. Se $m$ è la massa del veicolo in un dato istante e $dv$ è la variazione infinitesimale della sua velocità, mentre $dm$ è la variazione infinitesimale della massa (negativa, poiché il propellente viene espulso), si può scrivere:
+Considerando un veicolo spaziale che espelle massa (propellente) a una velocità di scarico $v_e$, la quantità di moto totale del sistema (veicolo + propellente) deve rimanere costante. Se $m$ è la massa del veicolo in un dato istante, $dv$ è la variazione infinitesimale della sua velocità e $dm$ è la variazione infinitesimale della massa (negativa, poiché il propellente viene espulso), si può scrivere:
 
 \begin{equation}
     m \cdot dv = -v_e \cdot dm
@@ -64,7 +64,7 @@ Se si desidera raddoppiare il $\Delta v$ di una missione mantenendo costante il 
 \begin{figure}[htbp!]
     \centering
     \includegraphics[width=0.7\textwidth]{Images/tsiolkovsky_graph.png}
-    \caption{Rappresentazione grafica della "tirannia dell'equazione del razzo": la massa iniziale necessaria cresce in modo esponenziale all'aumentare della variazione di velocità richiesta ($\Delta v$).}
+    \caption{Andamento del rapporto tra variazione di velocità e velocità di scarico ($\Delta v/v_e$) in funzione della frazione di massa del propellente ($\zeta$).}
     \label{fig:tsiolkovsky_graph}
 \end{figure}
 
@@ -175,8 +175,8 @@ Poiché questa immensa energia si propaga nello spazio vuoto distribuendosi sull
 
 \begin{figure}[htbp!]
     \centering
-    % \includegraphics[width=0.8\textwidth]{Images/inverse_square_luminosity.jpg}
-    \caption{Rappresentazione geometrica della Legge dell'Inverso del Quadrato: la Potenza totale emessa dalla stella (Luminosità L) si diluisce sulla superficie di sfere concentriche in espansione, riducendo l'intensità del flusso locale in proporzione a $1/r^2$.}
+    \includegraphics[width=0.8\textwidth]{Images/inverse_square_luminosity.png}
+    \caption{Astrazione visiva della Legge dell'Inverso del Quadrato nello spazio profondo. L'energia irradiata dal Sole si diluisce sulle superfici di sfere concentriche, causando una diminuzione quadratica della pressione fotonica che investe il veicolo.}
     \label{fig:luminosity_inverse_square}
 \end{figure}
 
@@ -211,7 +211,7 @@ La superficie della vela non sempre è completamente esposta al flusso solare. L
 \begin{figure}[htbp!]
     \centering
     \includegraphics[width=0.6\textwidth]{Images/sail_geometry.png}
-    \caption{Schema vettoriale dell'interazione fotonica: il versore normale $\mathbf{n}$, la direzione dei raggi solari $\mathbf{u}$ e l'angolo di incidenza $\alpha$ che determina l'area effettivamente esposta.}
+    \caption{Astrazione vettoriale dell'interazione fotonica. L'angolo $\alpha$, compreso tra la normale del piano nominale e la direzione del Sole , governa la riduzione geometrica dell'area utile ai fini propulsivi.}
     \label{fig:sail_geometry}
 \end{figure}
 
@@ -239,7 +239,7 @@ Il calcolo deve essere impostato come un integrale di superficie che includa una
 
 \begin{figure}[htbp!]
     \centering
-    \includegraphics[width=0.7\textwidth]{Images/sail_shadowing.jpg}
+    \includegraphics[width=0.7\textwidth]{Images/sail_shadowing.png}
     \caption{Rappresentazione concettuale dell'auto-occlusione: i componenti strutturali del veicolo proiettano ombre sulla membrana riflessiva, rendendo necessario il calcolo locale dell'area effettivamente illuminata.}
     \label{fig:sail_shadowing}
 \end{figure}
@@ -262,7 +262,7 @@ In particolar modo, grazie alla modellazione tridimensionale della vela solare e
 
 \begin{figure}[htbp!]
     \centering
-    % \includegraphics[width=0.7\textwidth]{Images/partial_eclipse_torque.jpg}
+    \includegraphics[width=0.7\textwidth]{Images/partial_eclipse_torque.png}
     \caption{Effetto dell'occlusione ambientale parziale: l'asimmetria di illuminazione sposta il centro di pressione rispetto al centro di massa, generando un momento torcente (\textit{torque}) che induce il rotolamento del veicolo.}
     \label{fig:eclipse_torque}
 \end{figure}
@@ -460,13 +460,6 @@ In definitiva, l'equazione vettoriale dell'accelerazione gravitazionale centrale
     \mathbf{a}_g(\mathbf{r}) = - \frac{\mu}{r^3} \mathbf{r}
 \end{equation}
 
-\begin{figure}[htbp!]
-    \centering
-    % \includegraphics[width=0.6\textwidth]{Images/gravity_vector_diagram.jpg}
-    \caption{Diagramma vettoriale dell'accelerazione gravitazionale centrale. Il vettore posizione $\mathbf{r}$ è diretto dal fuoco all'oggetto; il vettore accelerazione $\mathbf{a}_g$ è sempre diretto in verso opposto (verso il corpo attrattore), giustificando il segno negativo nell'equazione vettoriale.}
-    \label{fig:gravity_vector}
-\end{figure}
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Sintesi finale: l'Equazione del Moto}
@@ -483,13 +476,6 @@ Espandendo questa formula e inserendo tutte le equazioni che sono state dimostra
 \begin{equation}
     \frac{d^2\mathbf{r}}{dt^2} = - \frac{\mu}{r^3} \mathbf{r} + \frac{L \cdot A}{4 \pi r^2 c \cdot m} \cos(\alpha) \left[ \left(1 + \rho_s \cos(2\alpha) + \frac{2}{3}\rho_d \cos(\alpha) \right)\mathbf{n} + \left(\rho_s \sin(2\alpha) + \rho_d \sin(\alpha) \right)\mathbf{t} \right]
 \end{equation}
-
-\begin{figure}[htbp!]
-    \centering
-    \includegraphics[width=0.7\textwidth]{Images/orbital_forces.png}
-    \caption{Diagramma delle forze in gioco: l'accelerazione totale della vela solare è data dalla somma vettoriale tra la gravità ($\mathbf{a}_g$) e la perturbazione fotonica ($\mathbf{a}_{\text{SRP}}$).}
-    \label{fig:orbital_forces}
-\end{figure}
 
 Come è facile intuire, questa equazione è estremamente complessa. Tale complessità rende notevolmente difficile la possibilità di prevedere con precisione la traiettoria del veicolo spaziale, poiché ogni variabile è in continua evoluzione durante il viaggio. Man mano che il veicolo viaggia, la distanza ($r$) varia, modificando contemporaneamente sia l'attrazione gravitazionale che l'intensità della luce. Inoltre, ogni minima rotazione della vela cambia gli angoli di incidenza e i vettori di direzione ($\mathbf{n}$ e $\mathbf{t}$).
 

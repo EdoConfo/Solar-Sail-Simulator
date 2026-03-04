@@ -82,7 +82,7 @@ DrawDebugLine(GetWorld(), OrbitHistory.Last(), SailLoc, FColor::Cyan, false, -1,
 
 \begin{figure}[htbp!]
     \centering
-    \includegraphics[width=0.5\textwidth]{Images/orbital_trail.png}
+    \includegraphics[width=0.7\textwidth]{Images/orbital_trail.png}
     \caption{Rappresentazione visiva della scia orbitale generata da una vela solare.}
     \label{fig:orbital_trail}
 \end{figure}
@@ -93,6 +93,13 @@ DrawDebugLine(GetWorld(), OrbitHistory.Last(), SailLoc, FColor::Cyan, false, -1,
 
 Come analizzato nel Capitolo 4, l'interazione della luce con la membrana viene calcolata tramite il lancio di raggi virtuali. La funzione \lstinline|DebugVisuals()| estrae gli array generati durante quel calcolo (\lstinline|LocalActiveRays| e \lstinline|LocalBlockedRays|) e li converte nuovamente in coordinate globali del mondo tramite la matrice di trasformazione dell'attore (\lstinline|CurrentTrans.TransformPosition|). 
 Il motore grafico disegna quindi un fascio di laser verdi per i fotoni che impattano correttamente sulla vela e rossi per quelli che si trovano nella zona d'ombra generata da eventuali ostacoli, fornendo così un feedback visivo immediato sulla distribuzione dei raggi e sull'efficacia dell'orientamento della vela rispetto alla posizione del Sole.
+
+\begin{figure}[htbp!]
+    \centering
+    \includegraphics[width=0.6\textwidth]{Images/raycasting_debug.png}
+    \caption{Rappresentazione visiva dei raggi di luce che colpiscono la vela (verde) e quelli bloccati da ostacoli (rosso).}
+    \label{fig:raycasting_debug}
+\end{figure}
 
 \begin{lstlisting}[language=C++, caption={Rendering dei laser diagnostici per il Ray Casting in \lstinline|SolarSail.cpp|.}]
 if (Manager->ShowPhotonDebug) {
@@ -116,12 +123,6 @@ if (Manager->ShowPhotonDebug) {
 }
 \end{lstlisting}
 
-\begin{figure}[htbp!]
-    \centering
-    \includegraphics[width=0.5\textwidth]{Images/raycasting_debug.png}
-    \caption{Rappresentazione visiva dei raggi di luce che colpiscono la vela (verde) e quelli bloccati da ostacoli (rosso).}
-    \label{fig:raycasting_debug}
-\end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -144,7 +145,7 @@ Per massimizzare la leggibilità, l'efficienza propulsiva viene tradotta in un i
 
 \begin{figure}[htbp!]
     \centering
-    \includegraphics[width=0.5\textwidth]{Images/live_telemetry.png}
+    \includegraphics[width=0.7\textwidth]{Images/live_telemetry.png}
     \caption{Esempio di HUD testuale a schermo che mostra i dati telemetrici in tempo reale per una vela solare.}
     \label{fig:live_telemetry}
 \end{figure}
