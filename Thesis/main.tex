@@ -13,19 +13,19 @@
 \input{Structure/titlepage}
 
 % Pagina bianca di rispetto
-\thispagestyle{empty} \pagenumbering{gobble} \null \clearpage 
+\thispagestyle{empty}  \null \clearpage 
 \pagenumbering{gobble} \cleardoublepage \thispagestyle{empty}
 
 \input{Structure/dedication}
 
 \input{Structure/abstract}
+\pagenumbering{roman}
 \include{Chapters/01_Introduction}
 
 \tableofcontents
-% \listoffigures
-% \listoftables
-\clearpage¯
+\clearpage
 
+\pagenumbering{gobble}
 % --- 3. MAINMATTER (Capitoli) ---
 \mainmatter
 \include{Chapters/02_Theoretical_Foundations}
@@ -35,10 +35,6 @@
 \include{Chapters/06_Telemetry_Data}
 \include{Chapters/07_Results}
 \include{Chapters/08_Conclusions}
-
-% --- 4. APPENDICI (Il tuo manuale utente) ---
-\appendix
-\include{Appendices/A_User_Manual}
 
 % --- 5. BACKMATTER ---
 \backmatter

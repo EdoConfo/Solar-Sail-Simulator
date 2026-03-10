@@ -325,7 +325,7 @@ Mantenendo la coerenza strutturale definita al paragrafo precedente, anche il ca
 
 \subsection{Calcolo della distanza Vela-Sole}
 
-L'intensità della radiazione solare non è costante, ma dipende strettamente dalla posizione della vela rispetto alla posizione del Sole. Pertanto, il primo valore necessario all'algoritmo per quantificare la spinta dei fotoni è la distanza tra il veicolo e la fonte luminosa.
+L'intensità della radiazione solare non è costante, ma dipende strettamente dalla posizione della vela rispetto al Sole. Pertanto, il primo valore necessario all'algoritmo per quantificare la spinta dei fotoni è la distanza tra il veicolo e la fonte luminosa.
 
 All'interno della funzione \lstinline|GetSolarPressureAt()|, situata all'interno del gestore centrale \lstinline|SimulationManager|, il codice esegue per prima cosa una verifica sui parametri in ingresso. Il sistema controlla se la distanza radiale dal Sole (\lstinline|SailDistanceFromSunKm|) è già stata calcolata e fornita dalla vela che la richiama. In caso contrario (valore nullo o negativo), il Manager provvede a calcolarla autonomamente.
 

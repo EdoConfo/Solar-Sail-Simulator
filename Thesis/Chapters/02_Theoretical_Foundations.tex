@@ -161,7 +161,7 @@ Avvicinandosi al Sole (ad esempio verso Venere o Mercurio, come avvenuto per la 
 Sebbene l'utilizzo della Costante Solare ($P_E$) sia comune per le missioni riferite unicamente all'orbita terrestre, lo sviluppo di un simulatore astrodinamico complesso richiede un approccio più generalizzato. 
 Per questo motivo, risulta più rigoroso calcolare la pressione di radiazione a partire dalla potenza totale emessa dal Sole, ovvero la sua luminosità ($L$), e adattare dinamicamente il calcolo in base alla posizione del veicolo.
 
-Difatti il Sole si comporta come un'enorme lampada sferica che irradia energia in tutte le direzioni. La potenza totale emessa dal Sole è una costante fisica, espressa in $W$, che può essere calcolata a partire dalla Costante Solare e dall'area della sfera di raggio 1 AU:
+Difatti, il Sole si comporta come un'enorme lampada sferica che irradia energia in tutte le direzioni. La potenza totale emessa dal Sole è una costante fisica, espressa in $W$, che può essere calcolata a partire dalla Costante Solare e dall'area della sfera di raggio 1 AU:
 
 \begin{equation}
     L \approx 3.828 \times 10^{26} \, \text{W}
@@ -244,7 +244,7 @@ Il calcolo deve essere impostato come un integrale di superficie che includa una
     \label{fig:sail_shadowing}
 \end{figure}
 
-Purtroppo questo calcolo risulta essere impossibile da risolvere analiticamente, poiché la funzione di visibilità $v(x,y)$ dipende dalla geometria complessa del veicolo e dalla posizione relativa del Sole.
+Purtroppo, questo calcolo risulta essere impossibile da risolvere analiticamente, poiché la funzione di visibilità $v(x,y)$ dipende dalla geometria complessa del veicolo e dalla posizione relativa del Sole.
 Questo ostacolo giustifica la necessità di utilizzare un motore grafico: algoritmi di calcolo spaziale discretizzato, come il \textit{Ray Casting} \cite{ericson2004real}, permettono di campionare dinamicamente la funzione di visibilità $v(x,y)$ sulla geometria della vela, risolvendo il problema delle ombre in tempo reale.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

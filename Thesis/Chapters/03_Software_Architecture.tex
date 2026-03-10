@@ -9,7 +9,7 @@ Questo capitolo mira ad analizzare l'architettura software del progetto, svilupp
 
 \section{Unreal Engine come piattaforma di simulazione scientifica}
 
-Anche se Unreal Engine è stato originariamente sviluppato per la creazione di prodotti videoludici, la potenza di calcolo di Unreal Engine è ideale per simulazioni in ambito scientifico. Il simulatore sviluppato infatti ne sfrutta il \textit{rendering} in tempo reale e l'efficiente allocazione delle risorse per condurre simulazioni astrodinamiche complesse, offrendo anche un'interfaccia visiva molto più immersiva e interattiva rispetto alle soluzioni tradizionali \cite{epicgames_unrealengine}.
+Anche se Unreal Engine è stato originariamente sviluppato per la creazione di prodotti videoludici, la sua potenza di calcolo è ideale per simulazioni in ambito scientifico. Il simulatore sviluppato infatti ne sfrutta il \textit{rendering} in tempo reale e l'efficiente allocazione delle risorse per condurre simulazioni astrodinamiche complesse, offrendo anche un'interfaccia visiva molto più immersiva e interattiva rispetto alle soluzioni tradizionali \cite{epicgames_unrealengine}.
 
 Grazie alla grande efficienza garantita dal linguaggio C++, il motore grafico fornisce un'infrastruttura robusta per l'esecuzione di calcoli vettoriali complessi e l'aggiornamento continuo delle variabili fisiche. Per comprendere la transizione delle leggi fisiche della vela solare in questo ambiente virtuale, è necessario prima esaminare due concetti fondamentali di Unreal Engine: lo schema \textit{Actor-Component} e la gestione ciclica del tempo.
 
@@ -100,7 +100,7 @@ Il progetto si basa sull'estensione delle classi native di Unreal Engine tramite
     \item \lstinline|ASolarSail|: Rappresenta il veicolo fotonico vero e proprio. Sfrutta il suo modello 3D per intercettare i raggi solari (\textit{ray casting}) \cite{ericson2004real} e ricalcola le spinte a ogni ciclo, ma soprattutto mantiene i parametri unici e vitali della singola sonda: posizione orbitale, vettore velocità, massa, area esposta e coefficienti ottici.
 \end{itemize}
 
-Avendo diviso in maniera netta l'ambiente globale (\lstinline|ASimulationManager|) dall'attore fisico (\lstinline|ASolarSail|) si ottiene un enorme vantaggio pratico: in questo modo, infatti, si rende la simulazione nativamente "multi-vela". È possibile inserire nella stessa scena decine di sonde diverse per confrontarne simultaneamente le prestazioni (ad esempio variando l'area o la riflettività), avendo la certezza che tutte quante stiano operando sotto le stesse condizioni ambientali imposte dal \lstinline|ASimulationManager|.
+Avendo diviso in maniera netta l'ambiente globale (\lstinline|ASimulationManager|) dall'attore fisico (\lstinline|ASolarSail|), si ottiene un enorme vantaggio pratico: in questo modo, infatti, si rende la simulazione nativamente "multi-vela". È possibile inserire nella stessa scena decine di sonde diverse per confrontarne simultaneamente le prestazioni (ad esempio variando l'area o la riflettività), avendo la certezza che tutte quante stiano operando sotto le stesse condizioni ambientali imposte dal \lstinline|ASimulationManager|.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
