@@ -1,53 +1,53 @@
 # Solar Sail Simulator (UE5)
 
-Progetto di Tirocinio / Tesi in Ingegneria Informatica. \
-**Studente:** Edoardo Conforti \
-**Relatore:** Prof. Franco Milicchio 
+Internship / Thesis project in Computer Engineering. \
+**Student:** Edoardo Conforti \
+**Supervisor:** Prof. Franco Milicchio 
 
 ---
 
-## Descrizione
-Questo progetto implementa un simulatore di vela solare in Unreal Engine 5. L'obiettivo è replicare la fisica della propulsione spaziale basata sulla pressione di radiazione solare (i fotoni che spingono la vela).
+## Description
+This project implements a solar sail simulator in Unreal Engine 5. The goal is to reproduce the physics of space propulsion based on solar radiation pressure (the photons that push the sail).
 
-Il simulatore calcola la spinta in tempo reale considerando la posizione del Sole, l'orientamento della vela.
+The simulator computes the thrust in real time, taking into account the position of the Sun and the orientation of the sail.
 
-## Come funziona
-Il cuore della simulazione è la classe C++ `ASolarSail`, che esegue questo ciclo ad ogni fotogramma (Tick):
+## How it works
+The core of the simulation is the C++ class `ASolarSail`, which runs the following loop every frame (Tick):
 
-1.  **Rilevamento Luce (Single-Ray Casting):**
-    Il sistema lancia un raggio dal centro della vela verso il Sole. Questo permette di rilevare occlusioni totali e calcolare se la vela è illuminata o in ombra.
+1.  **Light Detection (Single-Ray Casting):**
+    The system casts a ray from the center of the sail toward the Sun. This makes it possible to detect total occlusions and to compute whether the sail is lit or in shadow.
 
-2.  **Calcolo della Spinta (Solar Pressure):**
-    La forza viene calcolata usando il modello vettoriale di McInnes per vele ideali:
+2.  **Thrust Calculation (Solar Pressure):**
+    The force is computed using McInnes' vector model for ideal sails:
     
     $\vec{F} = 2 P A (\hat{L} \cdot \hat{N})^2 \hat{N}$ 
     
-    Dove la pressione di radiazione solare scala con l'inverso del quadrato della distanza:
+    where the solar radiation pressure scales with the inverse square of the distance:
     
     $P = \frac{P_0}{r^2}$ 
     
-    * $P_0 = 4.56 \times 10^{-6}$ Pa = pressione di radiazione solare a 1 AU
-    * $r$ = distanza attuale del Sole (in AU)
-    * $A$ = area della vela ($m^2$)
-    * $\hat{L}$ = versore della direzione dal Sole alla vela
-    * $\hat{N}$ = versore della normale della vela
-    * $\alpha = \arccos(\hat{L} \cdot \hat{N})$ = angolo di incidenza della radiazione
+    * $P_0 = 4.56 \times 10^{-6}$ Pa = solar radiation pressure at 1 AU
+    * $r$ = current distance of the Sun (in AU)
+    * $A$ = sail area ($m^2$)
+    * $\hat{L}$ = unit vector of the direction from the Sun to the sail
+    * $\hat{N}$ = unit vector of the sail's normal
+    * $\alpha = \arccos(\hat{L} \cdot \hat{N})$ = angle of incidence of the radiation
 
-3.  **Integrazione Orbitale:**
-    Attualmente la simulazione si concentra sulla verifica della spinta fotonica in ambiente isolato (senza gravità).
-    Il prossimo step sarà introdurre l'attrazione gravitazionale del Sole per simulare orbite reali.
+3.  **Orbital Integration:**
+    Currently the simulation focuses on verifying the photonic thrust in an isolated environment (without gravity).
+    The next step will be to introduce the Sun's gravitational attraction to simulate real orbits.
 
-## Struttura del Progetto
-*   `Documents/`: Documentazione tecnica, paper di riferimento e concept.
-*   `Simulation/`: Progetto Unreal Engine 5.7 (C++ & Blueprints).
-*   `Thesis/`: Sorgenti LaTeX della tesi.
-*   `Presentation/`: Materiale per la presentazione finale.
+## Project Structure
+*   `Documents/`: Technical documentation, reference papers and concepts.
+*   `Simulation/`: Unreal Engine 5.7 project (C++ & Blueprints).
+*   `Thesis/`: LaTeX sources of the thesis.
+*   `Presentation/`: Material for the final presentation.
 
 ---
 
-## File di supporto
+## Support files
 
-*   [DEVLOG.md](DEVLOG.md): Diario di sviluppo.
-*   [TODO.md](TODO.md): Lista delle attività.
+*   [DEVLOG.md](DEVLOG.md): Development log.
+*   [TODO.md](TODO.md): Task list.
 
 ---
