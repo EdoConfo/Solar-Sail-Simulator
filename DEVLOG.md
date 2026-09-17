@@ -1,128 +1,128 @@
 # Devlog
 
-Log di sviluppo del simulatore di vela solare.
+Development log of the solar sail simulator.
 
 ---
 
-### Indice
-[Update 1: Setup, Bibliografia e Prototipo Iniziale](#update-1-setup-bibliografia-e-prototipo-iniziale)
+### Index
+[Update 1: Setup, Bibliography and Initial Prototype](#update-1-setup-bibliography-and-initial-prototype)
 
-[Update 2: Architettura Avanzata, Simulation Manager e Multi-Ray Casting](#update-2-architettura-avanzata-simulation-manager-e-multi-ray-casting)
+[Update 2: Advanced Architecture, Simulation Manager and Multi-Ray Casting](#update-2-advanced-architecture-simulation-manager-and-multi-ray-casting)
 
-[Update 3: Esportazione Dati, Analisi e Confronto](#update-3-esportazione-dati-analisi-e-confronto)
+[Update 3: Data Export, Analysis and Comparison](#update-3-data-export-analysis-and-comparison)
 
-[Update 4: Aggiunta Gravità e Refactoring Modulare](#update-4-aggiunta-gravità-e-refactoring-modulare)
+[Update 4: Gravity Addition and Modular Refactoring](#update-4-gravity-addition-and-modular-refactoring)
 
 ---
 
-# Update 1: Setup, Bibliografia e Prototipo Iniziale
+# Update 1: Setup, Bibliography and Initial Prototype
 
-## Sezioni
+## Sections
 
 ### Global
-- Aggiunto file [README.md](README.md) con descrizione del progetto.
-- Inseriti 2 file per tenere traccia dei progressi fatti ([TODO.md](TODO.md) e [DEVLOG.md](DEVLOG.md)).
-- Modificato il `.gitignore` per escludere i file ausiliari del progetto LaTeX [Thesis](Thesis).
+- Added the [README.md](README.md) file with the project description.
+- Added 2 files to keep track of the progress made ([TODO.md](TODO.md) and [DEVLOG.md](DEVLOG.md)).
+- Modified the `.gitignore` to exclude the auxiliary files of the LaTeX project [Thesis](Thesis).
 
 ### Documents
-- Creata cartella delle fonti [Documents](Documents) come raccomandato.
-- Aggiunti 7 file (su 22 individuati) che contengono informazioni tecniche utili per la simulazione.
+- Created the sources folder [Documents](Documents) as recommended.
+- Added 7 files (out of 22 identified) that contain technical information useful for the simulation.
 
 ### Presentation
-- Aggiunta la cartella [Presentation](Presentation) per quando sarà il momento.
+- Added the [Presentation](Presentation) folder for when the time comes.
 
 ### Simulation
-- Creato progetto [Simulation](Simulation) di Unreal Engine 5.7.1.
-- Effettuato il setup per VSCode.
-- Pulita la simulazione da terreno, nuvole e nebbia per creare il vuoto cosmico.
-- Creata la classe C++ principale [`SolarSail.cpp`](Simulation\Source\Simulation\Private\SolarSail.cpp).
-- Creato anche il suo header [`SolarSail.h`](Simulation\Source\Simulation\Public\SolarSail.h).
-- Implementata la logica di ricerca automatica della `DirectionalLight` (Sole) nella scena.
-- Sviluppato l'algoritmo di Ray Casting per calcolare l'angolo di incidenza dei raggi solari.
-- Applicata la fisica delle forze per simulare la spinta fotonica sulla mesh.
+- Created the [Simulation](Simulation) project in Unreal Engine 5.7.1.
+- Performed the setup for VSCode.
+- Cleaned the simulation of terrain, clouds and fog to create the cosmic void.
+- Created the main C++ class [`SolarSail.cpp`](Simulation\Source\Simulation\Private\SolarSail.cpp).
+- Also created its header [`SolarSail.h`](Simulation\Source\Simulation\Public\SolarSail.h).
+- Implemented the logic for automatically finding the `DirectionalLight` (Sun) in the scene.
+- Developed the Ray Casting algorithm to compute the angle of incidence of the sun rays.
+- Applied force physics to simulate the photonic thrust on the mesh.
 
 ### Thesis
-- Aggiunto uno scheletro provvisorio funzionante in LaTeX.
+- Added a provisional working skeleton in LaTeX.
 
 ---
 
-## Risultato Attuale ed Eventuali Errori Irrisolti
+## Current Result and Any Unresolved Issues
 
-> **Stato:** Funzionante (Prototipo Base)
+> **Status:** Working (Base Prototype)
 >
-> Il "Digital Twin" della vela solare è ora operativo all'interno di un livello vuoto. L'Actor C++ implementato rileva la `DirectionalLight` (il Sole) e calcola la spinta fotonica **tramite Ray Casting**. Questo approccio permette di determinare con precisione l'angolo di incidenza dei raggi sulla superficie della vela e applicare la forza risultante lungo la normale, simulando la pressione di radiazione in un ambiente privo di attriti e gravità.
+> The solar sail "Digital Twin" is now operational inside an empty level. The implemented C++ Actor detects the `DirectionalLight` (the Sun) and computes the photonic thrust **through Ray Casting**. This approach makes it possible to precisely determine the angle of incidence of the rays on the sail's surface and to apply the resulting force along the normal, simulating radiation pressure in an environment free of friction and gravity.
 
 ---
 
-# Update 2: Architettura Avanzata, Simulation Manager e Multi-Ray Casting
+# Update 2: Advanced Architecture, Simulation Manager and Multi-Ray Casting
 
-## Sezioni
+## Sections
 
 ### Simulation
-- Rimossi i commenti, devo imparare come farli migliori.
-- Creato una classe C++ [`SimulationManager.cpp`](Simulation/Source/Simulation/Private/SimulationManager.cpp) per i parametri fisici.
-- Creato anche il suo header [`SimulationManager.h`](Simulation/Source/Simulation/Public/SimulationManager.h).
-- Modificata tutta la fisica semplificata della simulazione, ora la vela viene divisa in una griglia `NxN` che si adatta alla superficie della vela.
-- Ogni parte della griglia è autonoma e calcola forza indipendentemente.
-- La vela può ora essere spinta da entrambi i lati (prima accadeva per uno solo), invertendo la normale. 
-- Modificato interamente l'overlay live per i dati telemetrici.
+- Removed the comments, I need to learn how to write better ones.
+- Created a C++ class [`SimulationManager.cpp`](Simulation/Source/Simulation/Private/SimulationManager.cpp) for the physical parameters.
+- Also created its header [`SimulationManager.h`](Simulation/Source/Simulation/Public/SimulationManager.h).
+- Changed the entire simplified physics of the simulation; now the sail is divided into an `NxN` grid that conforms to the sail's surface.
+- Each part of the grid is autonomous and computes force independently.
+- The sail can now be pushed from both sides (previously it happened on only one), by inverting the normal. 
+- Entirely reworked the live overlay for the telemetry data.
 
 ---
 
-## Risultato Attuale ed Eventuali Errori Irrisolti
+## Current Result and Any Unresolved Issues
 
-> **Stato:** Funzionante
+> **Status:** Working
 >
-> Il simulatore è ora configurato con Multi-Ray Casting, dove la vela è composta da una griglia NxN di celle invece di un singolo punto materiale. Ogni cella della griglia NxN calcola indipendentemente ombre e forza, permettendo la gestione corretta di occlusioni parziali e la conseguente generazione di una rotazione. L'intero sistema è ora centralizzato tramite un Simulation Manager che permette il controllo dei parametri a runtime, mentre un nuovo Overlay mostra in tempo reale lo stato dei singoli raggi (Active o Blocked) e i dati fisici.
+> The simulator is now configured with Multi-Ray Casting, where the sail is made up of an NxN grid of cells instead of a single material point. Each cell of the NxN grid independently computes shadows and force, allowing the correct handling of partial occlusions and the resulting generation of a rotation. The entire system is now centralized through a Simulation Manager that allows the parameters to be controlled at runtime, while a new Overlay shows in real time the state of the individual rays (Active or Blocked) and the physical data.
 
 ---
 
-# Update 3: Esportazione Dati, Analisi e Confronto
+# Update 3: Data Export, Analysis and Comparison
 
-## Sezioni
+## Sections
 
 ### Simulation
-- Implementata l'esportazione automatica dei dati su un file .csv alla fine di ogni simulazione.
-- Il file .csv viene aggiornato durante la simulazione ad ogni tick con tutti i dati rilevanti (velocità, forza, angolo di incidenza, ...).
+- Implemented the automatic export of the data to a .csv file at the end of each simulation.
+- The .csv file is updated during the simulation at every tick with all the relevant data (velocity, force, angle of incidence, ...).
 
 ### Analysis
-- Creato uno script Python [`SolarSailPlot.py`](Analysis/SolarSailPlot.py) che copia automaticamente il file .csv generato dalla simulazione.
-- Lo script genera grafici a partire dai dati contenuti nel file .csv.
-- Lo script permette di confrontare più file .csv insieme usando curve con colori diversi.
+- Created a Python script [`SolarSailPlot.py`](Analysis/SolarSailPlot.py) that automatically copies the .csv file generated by the simulation.
+- The script generates plots from the data contained in the .csv file.
+- The script makes it possible to compare several .csv files together using curves with different colors.
 
 ---
 
-## Risultato Attuale ed Eventuali Errori Irrisolti
+## Current Result and Any Unresolved Issues
 
-> **Stato:** Funzionante
+> **Status:** Working
 >
-> La simulazione ora esporta automaticamente i dati fisici rilevanti in formato .csv, che vengono poi analizzati e confrontati tramite grafici generati dallo script Python dedicato. Questo consente di valutare rapidamente le prestazioni della vela solare e di documentare i risultati in modo chiaro.
+> The simulation now automatically exports the relevant physical data in .csv format, which are then analyzed and compared through plots generated by the dedicated Python script. This makes it possible to quickly evaluate the performance of the solar sail and to document the results clearly.
 
 ---
 
-# Update 4: Aggiunta Gravità e Refactoring Modulare
+# Update 4: Gravity Addition and Modular Refactoring
 
-## Sezioni
+## Sections
 
 ### Simulation
-- Implementata la forza di gravità che agisce sulla vela, con parametri configurabili tramite il Simulation Manager.
-- Aggiunta la possibilità di scegliere tra orbite predefinite (LEO, MEO, GEO, Distanza Lunare) o un'altitudine personalizzata.
-- Refactoring del codice per migliorare la modularità e la manutenibilità, con funzioni dedicate per l'inizializzazione, il calcolo delle forze e l'aggiornamento della rotazione.
-- Migliorata la gestione dei parametri nell'editor, organizzandoli in categorie logiche (Orbita, Vela, Simulazione) e nascondendo quelli non rilevanti per l'utente.
-- Aggiunta la possibilità di disattivare completamente la forza solare o la gravità per testare solo una delle due.
-- Aggiunta modularità per supportare più vele con orbite e parametri indipendenti.
-- Risolto il problema dell'angolo di incidenza che sembrava essere sempre 0°, assicurando la corretta normalizzazione dei vettori e l'orientamento della vela.
+- Implemented the gravitational force acting on the sail, with parameters configurable through the Simulation Manager.
+- Added the ability to choose between predefined orbits (LEO, MEO, GEO, Lunar Distance) or a custom altitude.
+- Refactored the code to improve modularity and maintainability, with dedicated functions for initialization, force computation and rotation update.
+- Improved the handling of parameters in the editor, organizing them into logical categories (Orbit, Sail, Simulation) and hiding those not relevant to the user.
+- Added the ability to completely disable the solar force or gravity in order to test only one of the two.
+- Added modularity to support multiple sails with independent orbits and parameters.
+- Fixed the issue with the angle of incidence that seemed to always be 0°, ensuring the correct normalization of the vectors and the orientation of the sail.
 
 ### Analysis
-- Aggiornato lo script Python per supportare l'analisi dei dati con gravità, confrontando i risultati con e senza forza solare.
-- Modificata la directory per mantenere organizzati i file .csv generati da diverse simulazioni.
-- Aggiornato lo script per gestire dati e csv multipli, permettendo confronti più completi per simulazioni multi-vela.
+- Updated the Python script to support the analysis of data with gravity, comparing the results with and without solar force.
+- Changed the directory to keep the .csv files generated by different simulations organized.
+- Updated the script to handle multiple data and csv files, allowing more complete comparisons for multi-sail simulations.
 
 ---
 
-## Risultato Attuale ed Eventuali Errori Irrisolti
-> **Stato:** Funzionante
+## Current Result and Any Unresolved Issues
+> **Status:** Working
 >
-> La simulazione ora include la forza di gravità, con orbite configurabili e un sistema modulare che supporta più vele. L'analisi dei dati è stata aggiornata per confrontare scenari con e senza forza solare, consentendo una valutazione più completa delle prestazioni della vela solare in diverse condizioni.
+> The simulation now includes the gravitational force, with configurable orbits and a modular system that supports multiple sails. The data analysis has been updated to compare scenarios with and without solar force, enabling a more complete evaluation of the solar sail's performance under different conditions.
 
 ---
