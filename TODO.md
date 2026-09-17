@@ -1,78 +1,78 @@
 # ToDo List
 
-Lista dei TODO organizzata per directory di progetto.
+TODO list organized by project directory.
 
 ---
 
 
 # 1. Simulation
 
-- [x] Creare la classe C++ base `SolarSail`.
-- [x] Creare un materiale specchiato per farla sembrare una vela riflettente.
-- [x] Disabilitare la gravità e attrito.
-- [x] Fare in modo che il codice trovi da solo la DirectionalLight (Sole).
-- [x] Implementare algoritmo di Ray Casting per calcolare l'irradianza sulla superficie.
-- [x] Controllare se c'è qualcosa in mezzo che fa ombra (pianeti, asteroidi).
-- [x] Calcolare quanto è inclinata la vela rispetto alla luce.
-- [x] Applicare la spinta nella direzione giusta (lungo la normale).
-- [x] Disegnare linee colorate per vedere raggio e forza.
-- [x] Migliorare la simulazione fisica (Griglia Multi-Ray e Simulation Manager).
-- [x] Salvare posizione e velocità su un file CSV per i grafici.
-- [x] Attaccare la vela ad un satellite (Ho dei dubbi, vedremo dopo)
-- [x] La spinta avviene solo da una faccia della vela... Risolvi
-- [x] Aggiungere fattore di riflessione alla classe `SolarSail` per gestire casi non ideali (attualmente è 2 fisso) e diversi per ogni vela.
-- [x] Animazioni di Terra e Sole (rotazione, rivoluzione) per rendere tutto più realistico e calibrato sul TimeScale.
-- [x] Risolvi problema con timescale, forse è il clamp max che è troppo basso (attualmente 1000x).
-- [x] Risolvi il problema dell'angolo di incidenza che sembra essere sempre 0° (forse un problema di normalizzazione dei vettori o di orientamento della vela).
-- [x] Testa simulazione con più vele (con massa diversa) per vedere se si comportano come previsto (stessa forza, accelerazione diversa).
-- [x] Orbita non fissa ma modificabile nell'editor.
-- [x] Disattivare completamente gravità e/o forza solare per testare solo una delle due (attualmente è possibile solo scalare la forza, ma non disattivarla del tutto). (Se disattivo la gravità la vela continua a girarsi comunque??)
-- [x] Aggiungi possibilità di avere diverse orbite per diverse vele.
-- [x] Sistema le category degli UPROPERTY per organizzare meglio i parametri nell'editor (es. "Orbita", "Vela", "Simulazione").
-- [x] Implementazione gravità e orbita stabile
-	- [x] Definire la posizione della Terra (es. origine, FVector::ZeroVector)
-	- [x] Aggiungere costante gravitazionale, massa della Terra e massa della vela nei parametri di simulazione
-	- [x] Creare funzione per calcolare la forza gravitazionale sulla vela, usando la formula:
-		$F = G \cdot \frac{M_{terra} \cdot m_{vela}}{r^2}$
-	- [x] Integrare la forza gravitazionale nel Tick() della vela
-	- [x] Impostare la posizione iniziale della vela sull'orbita geostazionaria (raggio corretto)
-	- [x] Calcolare e impostare la velocità orbitale iniziale tangente (3,07 km/s) (DA TESTARE NUOVAMENTE, FORSE C'ERA UN PROBLEMA CON IL TIME SCALE)
-	- [x] Forzare l'orientamento della vela: normale sempre perpendicolare al vettore Terra-vela (angolo 0°)
-	- [x] Aggiornare la rotazione della vela a ogni tick per mantenere l'angolo
-	- [x] Verificare che la pressione solare e la gravità agiscano correttamente insieme
-- [x] Rendi ordinato il detail del Simulation Manager e della vela, nascondendo i parametri che non servono all'utente e raggruppando quelli che servono in categorie logiche (es. "Orbita", "Vela", "Simulazione").
-- [x] Sistema i raggi della pressione solare che a volte sembrano non colpire la vela (forse un problema di collisioni o di orientamento dei raggi).
-- [x] Ridisegna live telemetry.
-- [x] Risolvi problema con pressione solare.
-- [x] UPROPERTY non modificabili in runtime (es. massa della vela) per evitare problemi di simulazione.
-- [x] Risolvi crash alla modifica dei parametri in runtime (forse è necessario un reset della simulazione o una gestione migliore dei parametri).
+- [x] Create the base C++ class `SolarSail`.
+- [x] Create a mirrored material to make it look like a reflective sail.
+- [x] Disable gravity and friction.
+- [x] Make the code find the DirectionalLight (Sun) on its own.
+- [x] Implement a Ray Casting algorithm to compute the irradiance on the surface.
+- [x] Check whether there is something in between casting a shadow (planets, asteroids).
+- [x] Compute how tilted the sail is with respect to the light.
+- [x] Apply the thrust in the right direction (along the normal).
+- [x] Draw colored lines to see the ray and the force.
+- [x] Improve the physics simulation (Multi-Ray Grid and Simulation Manager).
+- [x] Save position and velocity to a CSV file for the plots.
+- [x] Attach the sail to a satellite (I have doubts, we'll see later)
+- [x] The thrust only happens on one face of the sail... Fix it
+- [x] Add a reflection factor to the `SolarSail` class to handle non-ideal cases (currently fixed at 2) and different for each sail.
+- [x] Animations of Earth and Sun (rotation, revolution) to make everything more realistic and calibrated to the TimeScale.
+- [x] Fix the problem with the timescale, maybe it's the max clamp that is too low (currently 1000x).
+- [x] Fix the problem with the angle of incidence that seems to always be 0° (maybe a problem with vector normalization or with the sail's orientation).
+- [x] Test the simulation with multiple sails (with different mass) to see whether they behave as expected (same force, different acceleration).
+- [x] Orbit not fixed but editable in the editor.
+- [x] Completely disable gravity and/or solar force to test only one of the two (currently it is only possible to scale the force, but not to disable it entirely). (If I disable gravity, does the sail keep rotating anyway??)
+- [x] Add the ability to have different orbits for different sails.
+- [x] Fix the categories of the UPROPERTY to better organize the parameters in the editor (e.g. "Orbit", "Sail", "Simulation").
+- [x] Implementation of gravity and stable orbit
+	- [x] Define the position of the Earth (e.g. origin, FVector::ZeroVector)
+	- [x] Add the gravitational constant, the Earth's mass and the sail's mass to the simulation parameters
+	- [x] Create a function to compute the gravitational force on the sail, using the formula:
+		$F = G \cdot \frac{M_{earth} \cdot m_{sail}}{r^2}$
+	- [x] Integrate the gravitational force into the sail's Tick()
+	- [x] Set the sail's initial position on the geostationary orbit (correct radius)
+	- [x] Compute and set the initial tangential orbital velocity (3.07 km/s) (TO BE TESTED AGAIN, THERE MAY HAVE BEEN A PROBLEM WITH THE TIME SCALE)
+	- [x] Force the sail's orientation: normal always perpendicular to the Earth-sail vector (angle 0°)
+	- [x] Update the sail's rotation at every tick to maintain the angle
+	- [x] Verify that solar pressure and gravity act correctly together
+- [x] Tidy up the detail panel of the Simulation Manager and of the sail, hiding the parameters the user doesn't need and grouping the useful ones into logical categories (e.g. "Orbit", "Sail", "Simulation").
+- [x] Fix the solar pressure rays that sometimes seem not to hit the sail (maybe a collision problem or a problem with the rays' orientation).
+- [x] Redraw the live telemetry.
+- [x] Fix the problem with solar pressure.
+- [x] UPROPERTY not editable at runtime (e.g. the sail's mass) to avoid simulation problems.
+- [x] Fix the crash when modifying parameters at runtime (maybe a simulation reset or better parameter handling is needed).
 
 ---
 
 # 2. Analysis
 
-- [x] Generazione grafici a partire dai dati della simulazione di Unreal (script python)
-- [x] Possibilità di confrontare più CSV sullo stesso grafico (colori diversi)
-- [ ] Generazione grafici a partire dalle formule ideali
-- [ ] Confronto tra grafici reali, teorici e simulati
-- [ ] Calcolo dell'errore effettivo
+- [x] Generation of plots from the Unreal simulation data (python script)
+- [x] Ability to compare multiple CSVs on the same plot (different colors)
+- [x] Generation of plots from the ideal formulas
+- [x] Comparison between real, theoretical and simulated plots
+- [x] Computation of the actual error
 
 ---
 
 # 3. Thesis
 
-- [x] Setup del progetto LaTeX funzionante.
-- [ ] Scrittura (duh).
-- [ ] Revisione.
-- [ ] Revisione.
-- [ ] Revisione.
+- [x] Working LaTeX project setup.
+- [x] Writing (duh).
+- [x] Review.
+- [x] Review.
+- [x] Review.
 
 ---
 
 # 4. Presentation
 
-- [ ] Registra video della simulazione.
-- [ ] Fai presentazione (no way).
-- [ ] Scrivi il discorso.
+- [x] Record a video of the simulation.
+- [x] Make the presentation (no way).
+- [x] Write the speech.
 
 ---
