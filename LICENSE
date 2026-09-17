@@ -5,8 +5,8 @@ This repository uses two licenses, depending on the type of content.
      any other source code in this repository.
 
   2. Documentation and written material — CC BY 4.0
-     Applies to: Thesis/ (text, figures, LaTeX sources), Analysis/Plots/,
-     and the Markdown documents in the repository root.
+     Applies to: Thesis/ (text, figures, LaTeX sources), Presentation/,
+     Analysis/Plots/, and the Markdown documents in the repository root.
 
 Third-party content is NOT covered by either license and remains under its
 original terms, in particular:

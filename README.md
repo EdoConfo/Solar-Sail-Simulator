@@ -41,14 +41,7 @@ The core of the simulation is the C++ class `ASolarSail`, which runs the followi
 *   `Simulation/`: Unreal Engine 5.7 project (C++ & Blueprints).
 *   `Analysis/`: Python scripts, CSV data and plots used to validate the simulation.
 *   `Thesis/`: LaTeX sources of the thesis.
-
----
-
-## Support files
-
-*   [DEVLOG.md](DEVLOG.md): Development log.
-*   [TODO.md](TODO.md): Task list.
-*   [REFERENCES.md](REFERENCES.md): Full list of references.
+*   `Presentation/`: Slides for the final presentation (PowerPoint).
 
 ---
 
@@ -73,3 +66,11 @@ Main sources used in this project (see [REFERENCES.md](REFERENCES.md) for the co
 - **Third-party assets** (`Simulation/Content/Fab/`, `Satellite/`, `Skybox/`) and Unreal Engine remain under their original licenses.
 
 See [LICENSE](LICENSE) for details.
+
+---
+
+## Support files
+
+*   [DEVLOG.md](DEVLOG.md): Development log.
+*   [TODO.md](TODO.md): Task list.
+*   [REFERENCES.md](REFERENCES.md): Full list of references.
