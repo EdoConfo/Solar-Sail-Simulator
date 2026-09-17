@@ -38,10 +38,9 @@ The core of the simulation is the C++ class `ASolarSail`, which runs the followi
     The next step will be to introduce the Sun's gravitational attraction to simulate real orbits.
 
 ## Project Structure
-*   `Documents/`: Technical documentation, reference papers and concepts.
 *   `Simulation/`: Unreal Engine 5.7 project (C++ & Blueprints).
+*   `Analysis/`: Python scripts, CSV data and plots used to validate the simulation.
 *   `Thesis/`: LaTeX sources of the thesis.
-*   `Presentation/`: Material for the final presentation.
 
 ---
 
@@ -49,5 +48,28 @@ The core of the simulation is the C++ class `ASolarSail`, which runs the followi
 
 *   [DEVLOG.md](DEVLOG.md): Development log.
 *   [TODO.md](TODO.md): Task list.
+*   [REFERENCES.md](REFERENCES.md): Full list of references.
 
 ---
+
+## References
+
+Main sources used in this project (see [REFERENCES.md](REFERENCES.md) for the complete list). The source documents are not redistributed in this repository.
+
+- McInnes, Colin R. *Solar Sailing: Technology, Dynamics and Mission Applications.* Springer Praxis Books, 1999.
+- Curtis, Howard D. *Orbital Mechanics for Engineering Students.* Elsevier Butterworth-Heinemann, 2005.
+- Ericson, Christer. *Real-Time Collision Detection.* CRC Press, 2004.
+- Simo, Jules and McInnes, Colin R. "Solar sail trajectory design with a realistic optical model." *Journal of Guidance, Control, and Dynamics,* 2016.
+- Spencer, David A., Betts, Bruce, et al. "The LightSail 2 Mission: Flight Results and Lessons Learned." *Acta Astronautica,* 2023.
+- Johnson, Les. "Solar Sailing: An Overview." NASA, 2008. https://ntrs.nasa.gov/api/citations/20090019561
+- Epic Games. *Unreal Engine 5 Documentation.* https://docs.unrealengine.com/
+
+---
+
+## License
+
+- **Code** (`Simulation/Source/`, `Analysis/*.py`): [MIT License](LICENSE)
+- **Thesis, plots and documentation**: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
+- **Third-party assets** (`Simulation/Content/Fab/`, `Satellite/`, `Skybox/`) and Unreal Engine remain under their original licenses.
+
+See [LICENSE](LICENSE) for details.
